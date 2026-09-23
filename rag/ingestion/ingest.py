@@ -36,12 +36,10 @@ CHUNKS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 CHUNK_SIZE = 512        # characters (not tokens) — adjust based on embedding model limits
 CHUNK_OVERLAP = 64      # character overlap between adjacent chunks
 
-# Source tier manifest — map filename patterns to tiers
-# Update this after Gate C confirms source availability
 TIER_MANIFEST: dict[str, int] = {
-    # "iso_9001_excerpt.txt": 1,
-    # "machining_process_manual.pdf": 2,
-    # "demo_bearing_knowledge.txt": 3,
+    "iso_13374_condition_monitoring.md": 1,
+    "tool_wear_thermal_compensation_guide.md": 2,
+    "demo_operating_procedures.md": 3,
 }
 
 

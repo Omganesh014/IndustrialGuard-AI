@@ -223,11 +223,8 @@ def run(defect_output: dict) -> dict:
 
     # Extract top features
     top_features = [f["feature"] for f in contributing_factors[:3]]
-    violations = defect_output.get("anomaly_summary", {})
-    stat_violations = []
-    if defect_output.get("anomaly_summary"):
-        # Re-retrieve from Quality Analysis output
-        pass
+    anomaly_summary = defect_output.get("anomaly_summary") or {}
+    stat_violations = anomaly_summary.get("statistical_violations", [])
 
     # Generate recommendations using multiple evidence bases
     all_recommendations = []

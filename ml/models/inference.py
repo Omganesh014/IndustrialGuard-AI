@@ -46,7 +46,8 @@ def _load_artifacts():
 
     _model = joblib.load(latest)
     _scaler = joblib.load(ARTIFACTS_DIR / "scaler.pkl")
-    _encoders = joblib.load(ARTIFACTS_DIR / "label_encoders.pkl")
+    encoders_path = ARTIFACTS_DIR / "label_encoders.pkl"
+    _encoders = joblib.load(encoders_path) if encoders_path.exists() else {}
 
     with open(FEATURES_DIR / "feature_columns.json") as f:
         feature_def = json.load(f)

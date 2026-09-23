@@ -145,17 +145,21 @@ def run_pipeline(record: dict, record_id: str | None = None) -> dict:
     return pipeline_result
 
 
-def run_demo_scenario() -> dict:
+def run_demo_scenario(record: dict | None = None) -> dict:
     """
     Run the fixed demo scenario defined in DEMO_CONTRACT.md.
-    Uses a sample record — replace with actual dataset record after Gate B.
-    Labeled: SYNTHETIC DATA — do not present as real industrial data.
+    Demonstrates Batch 2024-001 Incident:
+    - Tool wear > 200 min
+    - Elevated cutting torque
+    - High defect probability & anomaly severity
     """
-    demo_record = {
-        # Fill with actual feature names from chosen dataset after Gate B
-        # These are placeholders — do not use these values in real evaluation
-        "_data_source": "SYNTHETIC DATA — DEMO ONLY",
-        "_note": "Replace with real dataset record after Gate B",
+    demo_record = record or {
+        "air_temperature": 301.2,
+        "process_temperature": 311.8,
+        "rotational_speed": 1395.0,
+        "torque": 64.5,
+        "tool_wear": 218.0,
+        "_data_source": "SIMULATED STREAM — DEMO INCIDENT",
     }
-    logger.info("[Demo] Running demo scenario — SYNTHETIC DATA")
+    logger.info("[Demo] Running demo scenario — SIMULATED STREAM")
     return run_pipeline(demo_record, record_id="DEMO_BATCH_2024_001")

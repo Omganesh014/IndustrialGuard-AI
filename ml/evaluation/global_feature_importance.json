@@ -1,0 +1,32 @@
+[
+  {
+    "rank": 1,
+    "feature": "tool_wear",
+    "importance": 3.019333,
+    "explanation_method": "SHAP (TreeExplainer)"
+  },
+  {
+    "rank": 2,
+    "feature": "torque",
+    "importance": 2.897453,
+    "explanation_method": "SHAP (TreeExplainer)"
+  },
+  {
+    "rank": 3,
+    "feature": "rotational_speed",
+    "importance": 1.302528,
+    "explanation_method": "SHAP (TreeExplainer)"
+  },
+  {
+    "rank": 4,
+    "feature": "air_temperature",
+    "importance": 0.531263,
+    "explanation_method": "SHAP (TreeExplainer)"
+  },
+  {
+    "rank": 5,
+    "feature": "process_temperature",
+    "importance": 0.527299,
+    "explanation_method": "SHAP (TreeExplainer)"
+  }
+]

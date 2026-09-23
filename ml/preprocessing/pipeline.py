@@ -21,6 +21,9 @@ Scaler and encoder objects are saved for use at inference time.
 import os
 import json
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -227,7 +230,17 @@ def save_feature_definitions(feature_cols: list[str]) -> None:
 
 def run_pipeline():
     """Full preprocessing pipeline. Run this before model training."""
+    global NUMERICAL_COLUMNS, CATEGORICAL_COLUMNS
     df = load_raw_data()
+
+    if not NUMERICAL_COLUMNS and not CATEGORICAL_COLUMNS:
+        non_feature = ([TARGET_COLUMN] if TARGET_COLUMN else []) + ID_COLUMNS
+        candidates = [c for c in df.columns if c not in non_feature]
+        NUMERICAL_COLUMNS = list(df[candidates].select_dtypes(include=[np.number]).columns)
+        CATEGORICAL_COLUMNS = list(df[candidates].select_dtypes(exclude=[np.number]).columns)
+        logger.info(f"Auto-detected numerical features: {NUMERICAL_COLUMNS}")
+        logger.info(f"Auto-detected categorical features: {CATEGORICAL_COLUMNS}")
+
     quality_report = report_data_quality(df)
 
     # Save quality report
@@ -256,6 +269,12 @@ def run_pipeline():
 
         feature_cols = list(X_train.columns)
         save_feature_definitions(feature_cols)
+
+        # Save raw unscaled splits (essential for anomaly detection & physical operating ranges)
+        for name, X_raw, y_raw in [("train_raw", X_train, y_train), ("val_raw", X_val, y_val), ("test_raw", X_test, y_test)]:
+            out_raw = X_raw.copy()
+            out_raw[TARGET_COLUMN] = y_raw.values
+            out_raw.to_csv(PROCESSED_DIR / f"{name}.csv", index=False)
 
         # Scale (fit on train only)
         X_train, scaler = scale_features(X_train, feature_cols, fit=True)

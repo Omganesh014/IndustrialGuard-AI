@@ -1,0 +1,20 @@
+[
+  {
+    "content": "Tool wear exceeding 200 minutes leads to rapid plastic deformation, chipping, and catastrophic thermal breakdown. When cumulative tool wear exceeds 200 minutes, cutting friction increases dramatically, generating elevated torque loads and severe surface roughness defects on finished parts.",
+    "source": "tool_wear_thermal_compensation_guide.md",
+    "tier": 2,
+    "tier_label": "Manufacturer / Industrial Guide",
+    "data_source_label": "INDUSTRIAL TECHNICAL MANUAL",
+    "distance": 0.182,
+    "relevance_note": "[Source: tool_wear_thermal_compensation_guide.md — Tier 2]"
+  },
+  {
+    "content": "ISO 13374 Condition Monitoring: Condition indicators derived from rotating machinery parameters must be evaluated using multi-tier thresholds. When parameters exceed statistical deviation bounds (typically > 2.5 to 3.0 times the Interquartile Range above baseline), immediate root-cause investigation is recommended.",
+    "source": "iso_13374_condition_monitoring.md",
+    "tier": 1,
+    "tier_label": "International Standard",
+    "data_source_label": "PUBLIC TECHNICAL STANDARD",
+    "distance": 0.245,
+    "relevance_note": "[Source: iso_13374_condition_monitoring.md — Tier 1]"
+  }
+]

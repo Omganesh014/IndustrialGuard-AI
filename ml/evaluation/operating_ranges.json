@@ -1,0 +1,47 @@
+{
+  "air_temperature": {
+    "normal_low": 296.79,
+    "normal_high": 303.39,
+    "percentile_low": 5.0,
+    "percentile_high": 95.0,
+    "data_derived": true,
+    "source": "training_data_normal_class",
+    "note": "Range = [5.0th, 95.0th] percentile of normal-class training data. Not a certified industrial safety threshold."
+  },
+  "process_temperature": {
+    "normal_low": 306.52,
+    "normal_high": 313.85,
+    "percentile_low": 5.0,
+    "percentile_high": 95.0,
+    "data_derived": true,
+    "source": "training_data_normal_class",
+    "note": "Range = [5.0th, 95.0th] percentile of normal-class training data. Not a certified industrial safety threshold."
+  },
+  "rotational_speed": {
+    "normal_low": 1282.8,
+    "normal_high": 1763.9,
+    "percentile_low": 5.0,
+    "percentile_high": 95.0,
+    "data_derived": true,
+    "source": "training_data_normal_class",
+    "note": "Range = [5.0th, 95.0th] percentile of normal-class training data. Not a certified industrial safety threshold."
+  },
+  "torque": {
+    "normal_low": 25.97,
+    "normal_high": 52.89,
+    "percentile_low": 5.0,
+    "percentile_high": 95.0,
+    "data_derived": true,
+    "source": "training_data_normal_class",
+    "note": "Range = [5.0th, 95.0th] percentile of normal-class training data. Not a certified industrial safety threshold."
+  },
+  "tool_wear": {
+    "normal_low": 11.4,
+    "normal_high": 221.0,
+    "percentile_low": 5.0,
+    "percentile_high": 95.0,
+    "data_derived": true,
+    "source": "training_data_normal_class",
+    "note": "Range = [5.0th, 95.0th] percentile of normal-class training data. Not a certified industrial safety threshold."
+  }
+}

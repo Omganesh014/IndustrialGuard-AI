@@ -44,14 +44,30 @@ def _get_detector():
 # These are PHYSICAL VALIDITY ranges (e.g., temperature can't be -500°C),
 # NOT defect thresholds — those come from the trained anomaly detector.
 PARAMETER_SCHEMA: dict[str, dict[str, Any]] = {
-    # example entries — replace with actual dataset parameters after Gate B
-    # "temperature":   {"min": -50, "max": 1000, "unit": "°C"},
-    # "pressure":      {"min": 0,   "max": 1000, "unit": "bar"},
-    # "vibration":     {"min": 0,   "max": 100,  "unit": "mm/s"},
+    "air_temperature":     {"min": 250.0, "max": 350.0, "unit": "K"},
+    "process_temperature": {"min": 250.0, "max": 400.0, "unit": "K"},
+    "rotational_speed":    {"min": 500.0, "max": 5000.0, "unit": "rpm"},
+    "torque":              {"min": 0.0,   "max": 200.0, "unit": "Nm"},
+    "tool_wear":           {"min": 0.0,   "max": 500.0, "unit": "min"},
+    "temperature":         {"min": -50.0, "max": 1000.0, "unit": "°C"},
+    "pressure":            {"min": 0.0,   "max": 1000.0, "unit": "bar"},
+    "vibration":           {"min": 0.0,   "max": 100.0, "unit": "mm/s"},
 }
 
-# Required parameters — records missing these will be flagged as incomplete
-REQUIRED_PARAMETERS: list[str] = []  # fill from feature_columns.json after Gate B
+REQUIRED_PARAMETERS: list[str] = []
+
+
+def _get_required_parameters() -> list[str]:
+    global REQUIRED_PARAMETERS
+    if not REQUIRED_PARAMETERS:
+        feat_path = Path("data/features/feature_columns.json")
+        if feat_path.exists():
+            try:
+                with open(feat_path) as f:
+                    REQUIRED_PARAMETERS = json.load(f).get("features", [])
+            except Exception:
+                pass
+    return REQUIRED_PARAMETERS
 
 
 def validate_record(record: dict) -> dict:
@@ -63,7 +79,8 @@ def validate_record(record: dict) -> dict:
 
     Returns validation_result dict.
     """
-    missing = [p for p in REQUIRED_PARAMETERS if p not in record or record[p] is None]
+    req_params = _get_required_parameters()
+    missing = [p for p in req_params if p not in record or record[p] is None]
     range_violations = []
 
     for param, constraints in PARAMETER_SCHEMA.items():

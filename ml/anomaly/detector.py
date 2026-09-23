@@ -35,7 +35,7 @@ EVAL_DIR.mkdir(parents=True, exist_ok=True)
 # Isolation Forest configuration
 # contamination: expected fraction of outliers in training data
 # Set from domain knowledge or dataset analysis — NOT arbitrary
-CONTAMINATION = float("auto")   # "auto" uses standard heuristic; override after dataset analysis
+CONTAMINATION: str | float = "auto"   # "auto" uses standard heuristic; override after dataset analysis
 RANDOM_STATE = 42
 
 _iso_forest = None
@@ -86,8 +86,10 @@ def train_anomaly_detector(use_target_filtered: bool = True) -> None:
     """
     global _iso_forest, _stat_thresholds, _feature_cols
 
-    # Load training data
-    train_path = PROCESSED_DIR / "train.csv"
+    # Load training data (prefer unscaled raw data for physical thresholding)
+    train_path = PROCESSED_DIR / "train_raw.csv"
+    if not train_path.exists():
+        train_path = PROCESSED_DIR / "train.csv"
     if not train_path.exists():
         # Fall back to full processed dataset (anomaly-only mode, no labels)
         train_path = PROCESSED_DIR / "processed.csv"
@@ -167,7 +169,7 @@ def detect_anomalies(record: dict) -> dict:
     for col in _feature_cols:
         if col not in df.columns:
             df[col] = 0.0
-    X = df[_feature_cols].values
+    X = df[_feature_cols]
 
     # Isolation Forest score
     iso_score = float(_iso_forest.decision_function(X)[0])   # more negative = more anomalous

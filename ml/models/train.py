@@ -18,6 +18,10 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
@@ -26,7 +30,11 @@ from sklearn.metrics import (
     confusion_matrix, classification_report,
 )
 from sklearn.pipeline import Pipeline
-import xgboost as xgb
+
+try:
+    import xgboost as xgb
+except ImportError:
+    xgb = None
 
 warnings.filterwarnings("ignore")
 logging.basicConfig(level=logging.INFO)
@@ -68,19 +76,21 @@ def get_candidate_models() -> dict:
     Selection is dataset-dependent — do not assume all are appropriate.
     Justified in DECISION_LOG.md DECISION-007 after evaluation.
     """
-    return {
+    models = {
         "logistic_regression": LogisticRegression(
             max_iter=1000, random_state=RANDOM_STATE, class_weight="balanced"
         ),
         "random_forest": RandomForestClassifier(
             n_estimators=100, random_state=RANDOM_STATE, class_weight="balanced", n_jobs=-1
         ),
-        "xgboost": xgb.XGBClassifier(
-            n_estimators=100, random_state=RANDOM_STATE,
-            eval_metric="logloss", use_label_encoder=False,
-            scale_pos_weight=None,  # set after computing class ratio from train data
-        ),
     }
+    if xgb is not None:
+        models["xgboost"] = xgb.XGBClassifier(
+            n_estimators=100, random_state=RANDOM_STATE,
+            eval_metric="logloss",
+            scale_pos_weight=None,
+        )
+    return models
 
 
 def evaluate_model(model, X: pd.DataFrame, y: pd.Series, split_name: str) -> dict:

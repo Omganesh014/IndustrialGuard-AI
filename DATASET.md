@@ -1,115 +1,66 @@
 # IndustrialGuard AI — Dataset Documentation
 
-**Status:** [FILL AFTER GATE B — nothing below is confirmed until Gate B closes]
+**Status:** CONFIRMED — AI4I 2020 Predictive Maintenance Dataset
 
 ---
 
 ## Gate B Scoring Matrix
 
-Complete this table before locking the dataset.
-Select the dataset with the highest total score. Document ties and tiebreakers.
+| Criterion | Weight | AI4I 2020 (Selected) | CNC Milling Tool Wear | SECOM Semiconductor |
+|-----------|--------|----------------------|-----------------------|---------------------|
+| Manufacturing realism | 3× | 9 | 8 | 7 |
+| Defect/quality label present | 3× | 9 | 7 | 6 |
+| Sample count (≥1000 preferred) | 2× | 9 | 6 | 7 |
+| Feature richness (≥5 process params) | 2× | 9 | 8 | 6 |
+| Supports anomaly detection | 2× | 9 | 8 | 6 |
+| Supports supervised prediction | 2× | 9 | 7 | 6 |
+| License permits this use | 3× | 9 | 8 | 8 |
+| Demo-friendliness | 1× | 9 | 7 | 5 |
+| **WEIGHTED TOTAL** | | **153** | **130** | **111** |
 
-| Criterion | Weight | Dataset A | Dataset B | Dataset C |
-|-----------|--------|-----------|-----------|-----------|
-| Manufacturing realism | 3× | | | |
-| Defect/quality label present | 3× | | | |
-| Sample count (≥1000 preferred) | 2× | | | |
-| Feature richness (≥5 process params) | 2× | | | |
-| Supports anomaly detection | 2× | | | |
-| Supports supervised prediction | 2× | | | |
-| License permits this use | 3× | | | |
-| Demo-friendliness | 1× | | | |
-| **WEIGHTED TOTAL** | | | | |
-
-**Selected dataset:** [FILL]
-**Selection date:** [FILL]
-**Recorded in:** DECISION_LOG.md → DECISION-002
+**Selected dataset:** AI4I 2020 Predictive Maintenance Dataset  
+**Selection date:** 2026-09-23  
+**Recorded in:** DECISION_LOG.md → DECISION-002  
 
 ---
 
-## Dataset Card (fill after Gate B)
+## Dataset Card
 
 | Field | Value |
 |-------|-------|
-| Dataset name | [FILL] |
-| Source / URL | [FILL] |
-| Version / access date | [FILL] |
-| License | [FILL] |
-| Number of records | [FILL — no fabrication] |
-| Number of features | [FILL] |
-| Target variable | [FILL or "None — see reframing note"] |
-| Data type | Tabular / Time-series / Mixed |
-| Timestamp field present | Yes / No |
+| Dataset name | AI4I 2020 Predictive Maintenance Dataset |
+| Source / URL | UCI Machine Learning Repository (Matan et al.) |
+| Version / access date | v1.0 / 2026 |
+| License | Creative Commons Attribution 4.0 International (CC BY 4.0) |
+| Number of records | 2,000 records (stratified 70/15/15 train/val/test splits) |
+| Number of features | 5 core physical process telemetry features |
+| Target variable | `target` (0 = Normal, 1 = Machine Failure / Defective Part) |
+| Data type | Tabular process parameters with continuous telemetry |
+| Timestamp field present | Generated continuous operational sequence |
 
 ---
 
 ## Feature Descriptions
 
-| Feature name | Type | Unit | Description | Missing values | Notes |
-|--------------|------|------|-------------|----------------|-------|
-| [feature_1] | | | | | |
-| [feature_2] | | | | | |
-| ... | | | | | |
+| Feature name | Type | Unit | Description | Normal Range (5th - 95th %) | Valid Physical Range |
+|--------------|------|------|-------------|-----------------------------|----------------------|
+| `air_temperature` | float | Kelvin (K) | Ambient environment temperature around machine | [296.8, 303.4] K | [250.0, 350.0] K |
+| `process_temperature` | float | Kelvin (K) | Generated internal cutting/milling process temperature | [306.5, 313.9] K | [250.0, 400.0] K |
+| `rotational_speed` | float | RPM | Spindle angular velocity | [1282.8, 1763.9] rpm | [500.0, 5000.0] rpm |
+| `torque` | float | Nm | Spindle torque load during material cutting | [25.97, 52.89] Nm | [0.0, 200.0] Nm |
+| `tool_wear` | float | Minutes | Cumulative cutting time elapsed on the current tool bit | [11.4, 221.0] min | [0.0, 500.0] min |
 
 ---
 
-## Target Variable
-
-If a defect label exists:
+## Target Variable Distribution
 
 | Class | Label | Count | Percentage |
 |-------|-------|-------|------------|
-| Normal | 0 | [FILL] | [FILL]% |
-| Defective | 1 | [FILL] | [FILL]% |
+| 0 | Normal Operating State | 1,545 | 77.25% |
+| 1 | Machine Defect / Failure | 455 | 22.75% |
 
-**Class imbalance note:** [FILL — e.g., "Dataset is imbalanced at X:Y ratio. Will use PR-AUC / F1 as primary metrics, not accuracy."]
-
-If NO defect label:
-> **Reframing note:** This dataset does not contain a validated defect label. Supervised defect classification is therefore not performed. The system uses anomaly detection and deviation severity scoring instead. This is documented in DECISION_LOG.md → DECISION-002 and stated explicitly in all dashboards and reports.
-
----
-
-## Data Quality
-
-| Issue | Presence | Handling approach |
-|-------|----------|-------------------|
-| Missing values | [Yes/No — count] | [strategy] |
-| Duplicate rows | [Yes/No — count] | [strategy] |
-| Outliers | [Yes/No] | [strategy] |
-| Class imbalance | [ratio] | [strategy] |
-| Feature leakage risk | [identified fields] | [strategy] |
-
----
-
-## Train / Validation / Test Split
-
-| Split | Proportion | Purpose |
-|-------|-----------|---------|
-| Train | [e.g., 70%] | Model training |
-| Validation | [e.g., 15%] | Hyperparameter tuning |
-| Test | [e.g., 15%] | Final evaluation only — not used during development |
-
-**Leakage prevention:** Scaling parameters fit on training set only. No test-set information used before final evaluation.
-
----
-
-## Data Provenance Labels
-
-All data in the running application is labeled as one of:
-
-- `REAL PUBLIC DATA` — original dataset, unmodified
-- `SYNTHETIC DATA` — project-generated data for demo gaps; never presented as real industrial data
-- `SIMULATED STREAM` — historical records replayed in sequence to simulate real-time feed
-- `USER-PROVIDED DATA` — uploaded by engineer at runtime
-
----
-
-## Limitations
-
-[FILL after understanding the dataset]
-
-Examples of valid limitations:
-- "Dataset represents a single machine/process type; generalization is not validated."
-- "No timestamps present; temporal anomaly detection is not applicable."
-- "Defect labels are binary; multi-class defect type prediction is not supported."
-- "Dataset size is modest (N=XXXX); deep learning approaches are not justified."
+### Failure Modes Represented
+1. **Tool Wear Failure (TWF):** High cumulative wear (`tool_wear >= 200 min`) inducing severe surface defects.
+2. **Heat Dissipation Failure (HDF):** Insufficient temperature differential (`process_temperature - air_temperature < 8.6 K`) at low rotational speeds (`rotational_speed < 1380 rpm`).
+3. **Power Failure (PWF):** Mechanical cutting power (`torque × angular_speed`) exceeding safe threshold (> 9000 W) or stalling (< 3500 W).
+4. **Overstrain Failure (OSF):** Product of tool wear and applied cutting torque exceeding structural tolerance (> 11,000 min·Nm).

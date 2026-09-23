@@ -1,0 +1,27 @@
+{
+  "shape": [
+    2000,
+    6
+  ],
+  "missing_counts": {
+    "air_temperature": 0,
+    "process_temperature": 0,
+    "rotational_speed": 0,
+    "torque": 0,
+    "tool_wear": 0,
+    "target": 0
+  },
+  "duplicate_rows": 0,
+  "dtypes": {
+    "air_temperature": "float64",
+    "process_temperature": "float64",
+    "rotational_speed": "float64",
+    "torque": "float64",
+    "tool_wear": "float64",
+    "target": "int64"
+  },
+  "target_distribution": {
+    "0": 1545,
+    "1": 455
+  }
+}

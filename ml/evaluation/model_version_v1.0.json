@@ -1,0 +1,153 @@
+{
+  "model_version": "v1.0",
+  "selected_model": "xgboost",
+  "selection_criterion": "validation PR-AUC (primary), F1 (secondary)",
+  "model_path": "ml\\models\\defect_predictor_v1.0.pkl",
+  "experiment_1_results": {
+    "logistic_regression": {
+      "train_metrics": {
+        "split": "train",
+        "accuracy": 0.6721,
+        "precision": 0.3833,
+        "recall": 0.721,
+        "f1": 0.5005,
+        "confusion_matrix": [
+          [
+            711,
+            370
+          ],
+          [
+            89,
+            230
+          ]
+        ],
+        "roc_auc": 0.7336,
+        "pr_auc": 0.5583
+      },
+      "val_metrics": {
+        "split": "val",
+        "accuracy": 0.6633,
+        "precision": 0.368,
+        "recall": 0.6765,
+        "f1": 0.4767,
+        "confusion_matrix": [
+          [
+            153,
+            79
+          ],
+          [
+            22,
+            46
+          ]
+        ],
+        "roc_auc": 0.7291,
+        "pr_auc": 0.5454
+      }
+    },
+    "random_forest": {
+      "train_metrics": {
+        "split": "train",
+        "accuracy": 0.9986,
+        "precision": 0.9938,
+        "recall": 1.0,
+        "f1": 0.9969,
+        "confusion_matrix": [
+          [
+            1079,
+            2
+          ],
+          [
+            0,
+            319
+          ]
+        ],
+        "roc_auc": 1.0,
+        "pr_auc": 1.0
+      },
+      "val_metrics": {
+        "split": "val",
+        "accuracy": 0.86,
+        "precision": 0.6585,
+        "recall": 0.7941,
+        "f1": 0.72,
+        "confusion_matrix": [
+          [
+            204,
+            28
+          ],
+          [
+            14,
+            54
+          ]
+        ],
+        "roc_auc": 0.9276,
+        "pr_auc": 0.7946
+      }
+    },
+    "xgboost": {
+      "train_metrics": {
+        "split": "train",
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "confusion_matrix": [
+          [
+            1081,
+            0
+          ],
+          [
+            0,
+            319
+          ]
+        ],
+        "roc_auc": 1.0,
+        "pr_auc": 1.0
+      },
+      "val_metrics": {
+        "split": "val",
+        "accuracy": 0.87,
+        "precision": 0.7377,
+        "recall": 0.6618,
+        "f1": 0.6977,
+        "confusion_matrix": [
+          [
+            216,
+            16
+          ],
+          [
+            23,
+            45
+          ]
+        ],
+        "roc_auc": 0.9405,
+        "pr_auc": 0.83
+      }
+    }
+  },
+  "test_metrics": {
+    "split": "test",
+    "accuracy": 0.9233,
+    "precision": 0.8689,
+    "recall": 0.7794,
+    "f1": 0.8217,
+    "confusion_matrix": [
+      [
+        224,
+        8
+      ],
+      [
+        15,
+        53
+      ]
+    ],
+    "roc_auc": 0.9755,
+    "pr_auc": 0.9198,
+    "model_name": "xgboost",
+    "model_version": "v1.0",
+    "note": "Final test metrics. Not used for model selection. Report these numbers only."
+  },
+  "training_date": "2026-09-24T00:25:12.181189",
+  "dataset_version": "[FILL \u2014 dataset version or hash]",
+  "hyperparameters": "{'objective': 'binary:logistic', 'base_score': None, 'booster': None, 'callbacks': None, 'colsample_bylevel': None, 'colsample_bynode': None, 'colsample_bytree': None, 'device': None, 'early_stopping_rounds': None, 'enable_categorical': True, 'eval_metric': 'logloss', 'feature_types': None, 'feature_weights': None, 'gamma': None, 'grow_policy': None, 'importance_type': None, 'interaction_constraints': None, 'learning_rate': None, 'max_bin': None, 'max_cat_threshold': None, 'max_cat_to_onehot': None, 'max_delta_step': None, 'max_depth': None, 'max_leaves': None, 'min_child_weight': None, 'missing': nan, 'monotone_constraints': None, 'multi_strategy': None, 'n_estimators': 100, 'n_jobs': None, 'num_parallel_tree': None, 'random_state': 42, 'reg_alpha': None, 'reg_lambda': None, 'sampling_method': None, 'scale_pos_weight': None, 'subsample': None, 'tree_method': None, 'validate_parameters': None, 'verbosity': None}"
+}
