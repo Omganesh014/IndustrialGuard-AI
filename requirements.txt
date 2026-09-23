@@ -1,0 +1,33 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# requirements.txt — IndustrialGuard AI
+# Pin minor versions for reproducibility; bump intentionally.
+# Generated from pyproject.toml dependencies.
+#
+# Install:  pip install -r requirements.txt
+# Dev also: pip install -r requirements.txt -r requirements-dev.txt
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Machine Learning ──────────────────────────────────────────────────────────
+scikit-learn>=1.4,<2.0
+xgboost>=2.0,<3.0
+shap>=0.44,<1.0
+numpy>=1.26,<3.0
+pandas>=2.2,<3.0
+joblib>=1.3,<2.0
+
+# ── Backend / API ─────────────────────────────────────────────────────────────
+fastapi>=0.111,<1.0
+uvicorn[standard]>=0.29,<1.0
+sqlalchemy>=2.0,<3.0
+pydantic>=2.0,<3.0
+python-multipart>=0.0.9,<1.0
+
+# ── RAG / Vector store ────────────────────────────────────────────────────────
+chromadb>=0.5,<1.0
+
+# ── IBM watsonx.ai (Gate A — install after IBM access confirmed) ───────────────
+# ibm-watsonx-ai>=1.0,<2.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+python-dotenv>=1.0,<2.0
+httpx>=0.27,<1.0

@@ -6,7 +6,7 @@ Inference module for defect prediction at runtime.
 This module is called by the Defect Prediction Agent.
 It loads the trained model and scaler, runs prediction, and returns structured output.
 
-Returns structured JSON — never free text — so agents can consume it deterministically.
+Returns structured JSON -- never free text -- so agents can consume it deterministically.
 """
 
 import json
@@ -61,12 +61,12 @@ def predict(record: dict) -> dict:
     Run defect prediction on a single process record.
 
     Args:
-        record: dict of {feature_name: value} — raw process parameters
+        record: dict of {feature_name: value} -- raw process parameters
 
     Returns:
         dict with:
         - prediction: "DEFECTIVE" | "NORMAL"
-        - probability: float (0–1) — model confidence
+        - probability: float (0-1) -- model confidence
         - model_version: str
         - input_features: dict (sanitized copy of input)
         - note: data provenance label
@@ -91,7 +91,7 @@ def predict(record: dict) -> dict:
     # Ensure all feature columns present; fill missing with 0 (logged as anomaly)
     missing_cols = [c for c in _feature_cols if c not in df.columns]
     if missing_cols:
-        logger.warning(f"Missing features at inference: {missing_cols} — filled with 0")
+        logger.warning(f"Missing features at inference: {missing_cols} -- filled with 0")
     for col in missing_cols:
         df[col] = 0.0
 

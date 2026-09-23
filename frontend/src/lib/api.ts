@@ -78,6 +78,53 @@ export interface RecommendationRecord {
   timestamp: string | null;
 }
 
+export interface StatisticalViolation {
+  parameter: string;
+  value: number;
+  normal_range?: [number, number];
+  direction: string;
+  deviation_iqr_units: number;
+}
+
+export interface ContributingFactor {
+  feature: string;
+  importance?: number;
+  shap_value?: number;
+  direction?: string;
+  value?: number;
+}
+
+export interface PipelineStages {
+  process_monitoring?: {
+    validation?: { status: string; violations?: string[] };
+    anomaly_detection?: {
+      is_anomaly: boolean;
+      severity: string;
+      statistical_violations?: StatisticalViolation[];
+      isolation_forest_score?: number | null;
+    };
+  };
+  quality_analysis?: {
+    contributing_factors?: ContributingFactor[];
+    root_cause_summary?: string;
+    rag_passages?: Array<{ text: string; source: string }>;
+  };
+  defect_prediction?: {
+    prediction: string;
+    probability: number;
+    explanation?: string;
+  };
+  optimization?: {
+    recommendations?: Array<{
+      action: string;
+      basis?: string;
+      evidence?: string;
+      rag_source?: string;
+      uncertainty?: string;
+    }>;
+  };
+}
+
 export interface AnalyzeResponse {
   record_id: string;
   final_status: string;
@@ -89,7 +136,32 @@ export interface AnalyzeResponse {
     is_defective: boolean | null;
   } | null;
   recommendations_count: number;
-  pipeline_result: unknown;
+  final_recommendations?: Array<{
+    action: string;
+    basis?: string;
+    evidence?: string;
+    rag_source?: string;
+    uncertainty?: string;
+  }>;
+  pipeline_result: {
+    run_id?: string;
+    final_status?: string;
+    final_risk_level?: string;
+    stages?: PipelineStages;
+    final_prediction?: {
+      predicted_class: string;
+      probability: number;
+      model_version?: string;
+      is_defective?: boolean;
+    };
+    final_recommendations?: Array<{
+      action: string;
+      basis?: string;
+      evidence?: string;
+      rag_source?: string;
+      uncertainty?: string;
+    }>;
+  };
   duration_ms: number;
   disclaimer: string;
 }

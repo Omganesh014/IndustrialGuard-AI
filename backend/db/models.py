@@ -4,7 +4,7 @@ backend/db/models.py
 Database models for IndustrialGuard AI.
 
 Uses SQLAlchemy ORM with SQLite (MVP).
-Upgrade to PostgreSQL: change DATABASE_URL in .env — ORM layer unchanged.
+Upgrade to PostgreSQL: change DATABASE_URL in .env -- ORM layer unchanged.
 
 Tables:
 - ProductionRecord: raw process parameter records
@@ -28,7 +28,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
 
-# Database URL — loaded from environment
+# Database URL -- loaded from environment
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./industrialguard.db")
 
 engine = create_engine(

@@ -1,7 +1,7 @@
 """
 agents/monitoring/process_monitoring_agent.py
 
-Process Monitoring Agent — Agent 1 of 4
+Process Monitoring Agent -- Agent 1 of 4
 
 Responsibilities:
 - Accept incoming process records (single or batch)
@@ -9,9 +9,9 @@ Responsibilities:
 - Run anomaly detection
 - Flag deviations from normal operating conditions
 - Produce structured output for downstream agents (Quality Analysis Agent)
-- Never perform LLM-based decisions here — only deterministic validation + ML anomaly detection
+- Never perform LLM-based decisions here -- only deterministic validation + ML anomaly detection
 
-Input:  dict of {parameter: value} — raw process parameters
+Input:  dict of {parameter: value} -- raw process parameters
 Output: ProcessMonitoringOutput (structured dict / JSON)
 
 The agent does NOT call the LLM. It calls the ML anomaly detector.
@@ -42,7 +42,7 @@ def _get_detector():
 # Fill this after Gate B dataset inspection.
 # Maps parameter names to (min_valid, max_valid) for hard-limit validation.
 # These are PHYSICAL VALIDITY ranges (e.g., temperature can't be -500°C),
-# NOT defect thresholds — those come from the trained anomaly detector.
+# NOT defect thresholds -- those come from the trained anomaly detector.
 PARAMETER_SCHEMA: dict[str, dict[str, Any]] = {
     "air_temperature":     {"min": 250.0, "max": 350.0, "unit": "K"},
     "process_temperature": {"min": 250.0, "max": 400.0, "unit": "K"},
@@ -122,11 +122,11 @@ def run(record: dict, record_id: str | None = None) -> dict:
     Main entry point for the Process Monitoring Agent.
 
     Args:
-        record:    dict of {parameter_name: value} — one process record
+        record:    dict of {parameter_name: value} -- one process record
         record_id: optional identifier for the record
 
     Returns:
-        Structured ProcessMonitoringOutput dict — consumed by Quality Analysis Agent.
+        Structured ProcessMonitoringOutput dict -- consumed by Quality Analysis Agent.
     """
     timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -135,7 +135,7 @@ def run(record: dict, record_id: str | None = None) -> dict:
 
     if not validation["is_valid"]:
         logger.warning(
-            f"Record {record_id}: validation failed — "
+            f"Record {record_id}: validation failed -- "
             f"missing={validation['missing_parameters']}, "
             f"violations={validation['range_violations']}"
         )

@@ -6,7 +6,7 @@ Agent Pipeline Orchestrator for IndustrialGuard AI.
 Coordinates the 4-agent pipeline:
     Process Monitoring → Quality Analysis → Defect Prediction → Process Optimization
 
-Uses structured JSON passing between agents — never free text.
+Uses structured JSON passing between agents -- never free text.
 Each agent's output is validated before forwarding downstream.
 Errors in any agent are caught, logged, and handled gracefully (partial output preserved).
 
@@ -136,7 +136,7 @@ def run_pipeline(record: dict, record_id: str | None = None) -> dict:
     pipeline_result["final_recommendation_narrative"] = optimization_output.get("recommendation_narrative")
 
     logger.info(
-        f"[Pipeline] Complete — "
+        f"[Pipeline] Complete -- "
         f"run_id={record_id}, "
         f"status={pipeline_result['final_status']}, "
         f"risk={pipeline_result['final_risk_level']}"
@@ -159,7 +159,7 @@ def run_demo_scenario(record: dict | None = None) -> dict:
         "rotational_speed": 1395.0,
         "torque": 64.5,
         "tool_wear": 218.0,
-        "_data_source": "SIMULATED STREAM — DEMO INCIDENT",
+        "_data_source": "SIMULATED STREAM -- DEMO INCIDENT",
     }
-    logger.info("[Demo] Running demo scenario — SIMULATED STREAM")
+    logger.info("[Demo] Running demo scenario -- SIMULATED STREAM")
     return run_pipeline(demo_record, record_id="DEMO_BATCH_2024_001")

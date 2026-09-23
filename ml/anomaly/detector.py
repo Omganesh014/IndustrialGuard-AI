@@ -7,7 +7,7 @@ Experiment 2: Compare anomaly detection approaches and select the most appropria
 for the chosen dataset. Documented in DECISION_LOG.md DECISION-008.
 
 Primary approach: Isolation Forest (fits unlabeled data, good for tabular manufacturing params).
-Secondary: Statistical (IQR-based) per-parameter thresholds — always available, interpretable.
+Secondary: Statistical (IQR-based) per-parameter thresholds -- always available, interpretable.
 
 The statistical approach provides parameter-level explanation ("Temperature is 2.3 IQR above normal").
 The Isolation Forest provides a holistic anomaly score across all parameters.
@@ -34,7 +34,7 @@ EVAL_DIR.mkdir(parents=True, exist_ok=True)
 
 # Isolation Forest configuration
 # contamination: expected fraction of outliers in training data
-# Set from domain knowledge or dataset analysis — NOT arbitrary
+# Set from domain knowledge or dataset analysis -- NOT arbitrary
 CONTAMINATION: str | float = "auto"   # "auto" uses standard heuristic; override after dataset analysis
 RANDOM_STATE = 42
 
@@ -49,7 +49,7 @@ def compute_statistical_thresholds(X: pd.DataFrame, factor: float = 2.5) -> dict
     """
     Compute per-parameter statistical thresholds using IQR.
     factor=2.5 is moderate; adjust based on domain knowledge.
-    Thresholds are data-derived — do not fabricate industrial standards.
+    Thresholds are data-derived -- do not fabricate industrial standards.
     """
     thresholds = {}
     for col in X.columns:

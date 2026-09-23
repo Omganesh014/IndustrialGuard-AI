@@ -1,11 +1,11 @@
 """
 agents/defect_prediction/defect_prediction_agent.py
 
-Defect Prediction Agent — Agent 3 of 4
+Defect Prediction Agent -- Agent 3 of 4
 
 Responsibilities:
 - Receive structured output from Quality Analysis Agent
-- Run trained defect prediction model (ML inference — NOT LLM)
+- Run trained defect prediction model (ML inference -- NOT LLM)
 - Compute local SHAP explanation for this prediction
 - Produce structured output for Process Optimization Agent
 
@@ -14,7 +14,7 @@ Output: DefectPredictionOutput dict (consumed by Agent 4)
 
 Important:
 - All numerical prediction work is done by the trained ML model
-- LLM is not called here — LLM reasoning is in the Optimization Agent
+- LLM is not called here -- LLM reasoning is in the Optimization Agent
 - Confidence/probability is from model.predict_proba, not fabricated
 """
 
@@ -69,7 +69,7 @@ def run(quality_output: dict) -> dict:
     record = quality_output.get("input_record", {})
     record_id = quality_output.get("record_id")
 
-    # Step 1: ML prediction (deterministic — trained model only)
+    # Step 1: ML prediction (deterministic -- trained model only)
     try:
         predict = _get_inference()
         prediction_result = predict(record)
@@ -139,7 +139,7 @@ def _compute_risk_level(
 ) -> str:
     """
     Combine model prediction + anomaly severity into a single risk level.
-    This is a rule-based combination — not LLM-generated.
+    This is a rule-based combination -- not LLM-generated.
     """
     if is_defective and anomaly_severity in ("HIGH", "MEDIUM"):
         return "HIGH"

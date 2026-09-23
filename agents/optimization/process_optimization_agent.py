@@ -1,7 +1,7 @@
 """
 agents/optimization/process_optimization_agent.py
 
-Process Optimization Agent — Agent 4 of 4
+Process Optimization Agent -- Agent 4 of 4
 
 Responsibilities:
 - Receive DefectPredictionOutput from Agent 3
@@ -10,13 +10,13 @@ Responsibilities:
     (b) Historical: find past low-defect operating conditions for similar process states
     (c) What-if inference: perturb a feature in the trained model → show probability shift
 - Retrieve RAG context to support recommendations
-- Call Granite/LLM to NARRATE the recommendation (synthesis only — no invented numbers)
+- Call Granite/LLM to NARRATE the recommendation (synthesis only -- no invented numbers)
 - Produce structured RecommendationOutput for the API / dashboard
 
 CRITICAL RULE:
 The LLM must NOT invent numerical parameter adjustments.
 Every numerical suggestion must be traceable to (a), (b), or (c) above.
-When evidence is insufficient, the system must say so explicitly — never fabricate.
+When evidence is insufficient, the system must say so explicitly -- never fabricate.
 """
 
 import json
@@ -36,7 +36,7 @@ ARTIFACTS_DIR = Path("ml/models/artifacts")
 FEATURES_DIR = Path("data/features")
 EVAL_DIR = Path("ml/evaluation")
 
-# Operating range documentation — loaded from validated range file
+# Operating range documentation -- loaded from validated range file
 # These ranges must come from the dataset (e.g., normal-class percentiles)
 # NOT from fabricated "industry standard" numbers
 OPERATING_RANGES_PATH = EVAL_DIR / "operating_ranges.json"
@@ -210,7 +210,7 @@ def run(defect_output: dict) -> dict:
         defect_output: dict from Defect Prediction Agent
 
     Returns:
-        RecommendationOutput dict — stored in DB and displayed on dashboard.
+        RecommendationOutput dict -- stored in DB and displayed on dashboard.
     """
     record = defect_output.get("input_record", {})
     record_id = defect_output.get("record_id")
@@ -271,7 +271,7 @@ def run(defect_output: dict) -> dict:
         except Exception as e:
             logger.warning(f"RAG retrieval for recommendations failed: {e}")
 
-    # LLM synthesis (narration only — no invented numbers)
+    # LLM synthesis (narration only -- no invented numbers)
     recommendation_narrative = None
     if unique_recs:
         try:

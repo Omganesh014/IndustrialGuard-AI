@@ -7,7 +7,7 @@ Experiment 1: Multi-model comparison (required by problem statement §31).
 Models compared on validation set. Winner selected by PR-AUC / F1 (class-imbalance safe).
 Final evaluation on test set performed ONCE after model selection.
 
-Only report numbers obtained from actual experiments — no fabrication.
+Only report numbers obtained from actual experiments -- no fabrication.
 """
 
 import json
@@ -51,7 +51,7 @@ EVAL_DIR.mkdir(parents=True, exist_ok=True)
 TARGET_COLUMN = "target"   # override with actual column name after Gate B
 RANDOM_STATE = 42
 
-# Model version metadata — update when retraining
+# Model version metadata -- update when retraining
 MODEL_VERSION = "v1.0"
 
 
@@ -73,7 +73,7 @@ def load_splits():
 def get_candidate_models() -> dict:
     """
     Candidate models for Experiment 1.
-    Selection is dataset-dependent — do not assume all are appropriate.
+    Selection is dataset-dependent -- do not assume all are appropriate.
     Justified in DECISION_LOG.md DECISION-007 after evaluation.
     """
     models = {
@@ -158,7 +158,7 @@ def run_experiment_1(splits: dict) -> dict:
 
 def final_test_evaluation(model, splits: dict, model_name: str) -> dict:
     """
-    Test-set evaluation — performed ONCE after model selection.
+    Test-set evaluation -- performed ONCE after model selection.
     These are the numbers to report. Never used for model selection.
     """
     X_test, y_test = splits["test"]
@@ -191,7 +191,7 @@ def save_model(model, model_name: str, all_results: dict, test_metrics: dict) ->
         "experiment_1_results": experiment_log,
         "test_metrics": test_metrics,
         "training_date": pd.Timestamp.now().isoformat(),
-        "dataset_version": "[FILL — dataset version or hash]",
+        "dataset_version": "[FILL -- dataset version or hash]",
         "hyperparameters": str(model.get_params()) if hasattr(model, "get_params") else "N/A",
     }
 

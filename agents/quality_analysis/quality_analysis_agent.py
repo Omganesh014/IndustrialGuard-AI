@@ -1,7 +1,7 @@
 """
 agents/quality_analysis/quality_analysis_agent.py
 
-Quality Analysis Agent — Agent 2 of 4
+Quality Analysis Agent -- Agent 2 of 4
 
 Responsibilities:
 - Receive structured output from Process Monitoring Agent
@@ -10,7 +10,7 @@ Responsibilities:
 - Trigger Root-Cause Analysis (RCA is a CAPABILITY of this agent, not a 5th agent)
 - Retrieve supporting evidence from RAG knowledge base
 - Produce structured quality assessment for Defect Prediction Agent
-- Call Granite/LLM only for NARRATION of analysis results — never for numerical analysis
+- Call Granite/LLM only for NARRATION of analysis results -- never for numerical analysis
 
 Input:  ProcessMonitoringOutput dict (from Agent 1)
 Output: QualityAnalysisOutput dict (consumed by Agent 3)
@@ -68,7 +68,7 @@ def _build_rca(
     rag_passages: list[dict],
 ) -> list[dict]:
     """
-    Root-Cause Analysis — a capability of the Quality Analysis Agent.
+    Root-Cause Analysis -- a capability of the Quality Analysis Agent.
 
     Combines:
     1. Statistical violations from the anomaly detector (observed deviations)
@@ -76,7 +76,7 @@ def _build_rca(
     3. RAG evidence (retrieved documentation supporting the factor)
 
     Returns a list of contributing factors with evidence tags.
-    Language uses "associated with" / "likely contributing" — never claims causation.
+    Language uses "associated with" / "likely contributing" -- never claims causation.
     """
     # Map violation parameters for quick lookup
     violation_map = {v["parameter"]: v for v in statistical_violations}
@@ -180,7 +180,7 @@ def run(monitoring_output: dict) -> dict:
         v["parameter"] for v in violations if v.get("deviation_iqr_units", 0) > 2.0
     ]
 
-    # Step 6: LLM narration (ONLY for human-readable text — no numerical work)
+    # Step 6: LLM narration (ONLY for human-readable text -- no numerical work)
     narrative = None
     if anomaly.get("is_anomaly"):
         try:

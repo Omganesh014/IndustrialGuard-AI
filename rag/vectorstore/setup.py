@@ -4,7 +4,7 @@ rag/vectorstore/setup.py
 Vector store setup for IndustrialGuard AI RAG pipeline.
 
 Uses ChromaDB in embedded (local disk) mode.
-No external server required — matches the lightweight architecture decision (DECISION-005).
+No external server required -- matches the lightweight architecture decision (DECISION-005).
 
 To upgrade to a hosted vector DB later: swap the client initialization here only.
 The retrieval interface (rag/retrieval/retriever.py) remains unchanged.
@@ -25,7 +25,7 @@ CHROMA_DIR = Path("rag/vectorstore/chroma_db")
 CHUNKS_MANIFEST = Path("rag/vectorstore/chunks_manifest.json")
 COLLECTION_NAME = "industrialguard_knowledge"
 
-# Embedding model — update after confirming IBM watsonx embedding availability
+# Embedding model -- update after confirming IBM watsonx embedding availability
 # Default: use a lightweight local model for MVP; swap to IBM embedding at integration
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"   # sentence-transformers; swap to IBM embedding model
 
@@ -48,17 +48,13 @@ def get_chroma_client():
 def get_embedding_function():
     """
     Return embedding function.
-    Default: sentence-transformers (local, no API required).
-    Swap to IBM watsonx embedding when integration is confirmed.
+    Returns None to use ChromaDB's built-in default embedding (all-MiniLM-L6-v2 via onnx).
+    Swap to IBM watsonx embedding when integration is confirmed -- change here only,
+    retriever interface stays unchanged.
     """
-    try:
-        from chromadb.utils import embedding_functions
-        return embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=EMBEDDING_MODEL
-        )
-    except Exception as e:
-        logger.warning(f"SentenceTransformer embedding unavailable: {e}. Using default.")
-        return None
+    # Using ChromaDB default embedding for consistency across setup and retrieval.
+    # ChromaDB bundles onnx-based all-MiniLM-L6-v2 -- no external model server required.
+    return None
 
 
 def build_vector_store(force_rebuild: bool = False) -> None:

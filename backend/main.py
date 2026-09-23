@@ -4,16 +4,16 @@ backend/main.py
 FastAPI application entry point for IndustrialGuard AI.
 
 API endpoints:
-  POST /api/data              — ingest a new process record
-  GET  /api/process-status    — latest process status
-  GET  /api/anomalies         — recent anomalies
-  GET  /api/predictions       — recent predictions
-  GET  /api/recommendations   — recent recommendations (with human review actions)
-  POST /api/analyze           — run full agent pipeline on a record
-  POST /api/chat              — AI assistant (Granite + RAG)
-  GET  /api/metrics           — overall quality metrics
-  GET  /api/model-performance — model version + evaluation metrics
-  POST /api/recommendations/{id}/review  — human approve/reject
+  POST /api/data              -- ingest a new process record
+  GET  /api/process-status    -- latest process status
+  GET  /api/anomalies         -- recent anomalies
+  GET  /api/predictions       -- recent predictions
+  GET  /api/recommendations   -- recent recommendations (with human review actions)
+  POST /api/analyze           -- run full agent pipeline on a record
+  POST /api/chat              -- AI assistant (Granite + RAG)
+  GET  /api/metrics           -- overall quality metrics
+  GET  /api/model-performance -- model version + evaluation metrics
+  POST /api/recommendations/{id}/review  -- human approve/reject
 
 Architecture separation:
 - API layer: this file (routing, validation, HTTP)
@@ -61,16 +61,22 @@ app = FastAPI(
     title="IndustrialGuard AI",
     description=(
         "Agentic AI Manufacturing Quality Control System. "
-        "Decision-support prototype — not a certified industrial control system."
+        "Decision-support prototype -- not a certified industrial control system."
     ),
     version="1.0.0",
     lifespan=lifespan,
 )
 
-# CORS — allow frontend in development; restrict in production
+# CORS -- allow frontend origins in development
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000").split(",")
+allowed_origins = [orig.strip() for orig in _raw_origins if orig.strip()]
+for _default_origin in ("http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://127.0.0.1:8000"):
+    if _default_origin not in allowed_origins:
+        allowed_origins.append(_default_origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(","),
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -85,7 +91,7 @@ class ProcessRecord(BaseModel):
     machine_id: str | None = Field(default=None)
     data_source_label: str = Field(default="USER-PROVIDED DATA")
     parameters: dict[str, float | str | int] = Field(
-        ..., description="Process parameter values — keys must match trained feature names"
+        ..., description="Process parameter values -- keys must match trained feature names"
     )
 
 
@@ -349,7 +355,7 @@ def review_recommendation(
         "recommendation_id": recommendation_id,
         "status": rec.status,
         "approved_by": rec.approved_by,
-        "message": "Review recorded. This is a decision-support action — not automated machine control.",
+        "message": "Review recorded. This is a decision-support action -- not automated machine control.",
     }
 
 
@@ -376,7 +382,7 @@ def get_metrics(hours: int = 24, db: Session = Depends(get_db)):
         "total_predictions": total_preds,
         "defect_rate": round(defective_preds / max(total_preds, 1), 4),
         "pending_recommendations": pending_recs,
-        "data_source_note": "Metrics computed from stored prediction records — not fabricated.",
+        "data_source_note": "Metrics computed from stored prediction records - not fabricated.",
     }
 
 
@@ -394,11 +400,11 @@ def get_model_performance(db: Session = Depends(get_db)):
 
     return {
         "model_versions": versions,
-        "note": "Metrics from actual model evaluation — not fabricated. See ml/evaluation/ for full results.",
+        "note": "Metrics from actual model evaluation -- not fabricated. See ml/evaluation/ for full results.",
     }
 
 
-@app.post("/api/chat", summary="AI assistant — grounded in current data and RAG knowledge")
+@app.post("/api/chat", summary="AI assistant -- grounded in current data and RAG knowledge")
 def chat(message: ChatMessage, db: Session = Depends(get_db)):
     """
     Conversational interface.

@@ -14,7 +14,7 @@ Steps:
 Source tiers (per DECISION_LOG.md DECISION-003):
 - Tier 1: Public standards, government/university technical docs
 - Tier 2: Manufacturer docs (explicitly public), open-source manuals
-- Tier 3: Project-generated demonstration knowledge — labeled, never presented as official
+- Tier 3: Project-generated demonstration knowledge -- labeled, never presented as official
 
 Rule: Tier 3 documents must contain the string "Project-generated demonstration knowledge"
 in their filename or frontmatter, and this label is preserved in all metadata.
@@ -33,7 +33,7 @@ CHUNKS_OUTPUT_DIR = Path("rag/vectorstore")
 CHUNKS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Chunking configuration
-CHUNK_SIZE = 512        # characters (not tokens) — adjust based on embedding model limits
+CHUNK_SIZE = 512        # characters (not tokens) -- adjust based on embedding model limits
 CHUNK_OVERLAP = 64      # character overlap between adjacent chunks
 
 TIER_MANIFEST: dict[str, int] = {
@@ -77,7 +77,7 @@ def load_document(path: Path) -> str:
 
 
 def clean_text(text: str) -> str:
-    """Basic text cleaning — remove excess whitespace and control characters."""
+    """Basic text cleaning -- remove excess whitespace and control characters."""
     text = re.sub(r"\r\n", "\n", text)
     text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
@@ -106,7 +106,7 @@ def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVE
                 # Overlap: include last `overlap` chars of previous chunk
                 current = current[-overlap:] + "\n\n" + para
             else:
-                # Paragraph itself exceeds chunk size — split by sentences
+                # Paragraph itself exceeds chunk size -- split by sentences
                 sentences = re.split(r"(?<=[.!?])\s+", para)
                 for sent in sentences:
                     if len(current) + len(sent) + 1 <= chunk_size:

@@ -147,7 +147,7 @@ def explain_single_prediction(model, record: dict, feature_cols: list[str], scal
         "disclaimer": (
             "Feature contributions reflect model behavior on this record. "
             "They indicate association, not causation. "
-            "This is model-derived evidence — not a certified engineering diagnosis."
+            "This is model-derived evidence -- not a certified engineering diagnosis."
         ),
     }
 

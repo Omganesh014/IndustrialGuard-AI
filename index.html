@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IndustrialGuard AI — Quality Control Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Inline overrides for standalone operation */
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #e5e7eb; border-top-color: #3b82d4; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .status-dot--green  { background: #22c55e; }
+    .status-dot--yellow { background: #eab308; }
+    .status-dot--red    { background: #ef4444; }
+    .status-dot--gray   { background: #9ca3af; }
+    .prob-bar { height: 12px; background: #f3f4f6; border-radius: 6px; overflow: hidden; margin-top: 4px; }
+    .prob-bar__fill { height: 100%; border-radius: 6px; background: #3b82d4; transition: width 0.4s; }
+    .prob-bar__fill--danger { background: #ef4444; }
+    .prob-bar__fill--warning { background: #f59e0b; }
+    .empty-state { padding: 24px; text-align: center; color: #9ca3af; font-size: 13px; }
+    #api-status { font-size: 11px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    textarea { width: 100%; font-family: monospace; font-size: 12px; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; resize: vertical; outline: none; }
+    textarea:focus { border-color: #3b82d4; }
+    .result-json { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 11px; white-space: pre-wrap; max-height: 360px; overflow-y: auto; }
+    .section { margin-bottom: 32px; }
+    .tag { display: inline-block; font-size: 10px; font-family: monospace; background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; border-radius: 3px; padding: 1px 5px; }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <header class="app-header">
+    <div>
+      <div class="app-header__logo">IndustrialGuard AI</div>
+      <div class="app-header__subtitle">CNC Machining Quality Control &nbsp;·&nbsp; IBM Problem Statement #37</div>
+    </div>
+    <div id="api-status" style="display:flex;align-items:center;gap:6px;margin-left:auto;margin-right:16px;">
+      <span class="status-dot status-dot--gray" id="status-dot"></span>
+      <span id="status-text">Connecting...</span>
+    </div>
+    <div class="app-header__disclaimer">Decision-support prototype — not for autonomous machine control</div>
+  </header>
+
+  <!-- ── Nav ────────────────────────────────────────────────────────────── -->
+  <nav class="app-nav">
+    <a class="app-nav__link active" href="#" onclick="showTab('overview',this)">Overview</a>
+    <a class="app-nav__link" href="#" onclick="showTab('analyze',this)">Analyze Record</a>
+    <a class="app-nav__link" href="#" onclick="showTab('predictions',this)">Predictions</a>
+    <a class="app-nav__link" href="#" onclick="showTab('anomalies',this)">Anomalies</a>
+    <a class="app-nav__link" href="#" onclick="showTab('recommendations',this)">Recommendations</a>
+    <a class="app-nav__link" href="#" onclick="showTab('model',this)">Model Performance</a>
+    <a class="app-nav__link" href="#" onclick="showTab('chat',this)">AI Assistant</a>
+  </nav>
+
+  <!-- ── Main ───────────────────────────────────────────────────────────── -->
+  <main class="app-main">
+
+    <!-- ── Overview ─────────────────────────────────────────────────────── -->
+    <div id="tab-overview" class="tab-content active">
+      <h2 class="section-title">Overview — Last 24 Hours</h2>
+      <p class="section-subtitle">
+        <span class="tag">SIMULATED STREAM</span>
+        Replayed from CNC machining dataset · Not a live factory connection
+      </p>
+
+      <div class="grid grid--4 mb-4" id="metrics-grid">
+        <div class="card"><div class="card__label">Records</div><div class="card__value" id="m-records"><span class="spinner"></span></div></div>
+        <div class="card"><div class="card__label">Anomalies</div><div class="card__value" id="m-anomalies"><span class="spinner"></span></div><div class="card__sub" id="m-anomalies-sub"></div></div>
+        <div class="card"><div class="card__label">Predicted Defective</div><div class="card__value" id="m-defective"><span class="spinner"></span></div><div class="card__sub" id="m-defect-rate"></div></div>
+        <div class="card"><div class="card__label">Pending Reviews</div><div class="card__value" id="m-pending"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">Recent Process Status</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Time</th><th>Record ID</th><th>Status</th><th>Data Source</th></tr></thead>
+            <tbody id="status-table-body"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">Recent High-Risk Predictions</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Time</th><th>Record ID</th><th>Prediction</th><th>Probability</th><th>Risk Level</th><th>Model</th></tr></thead>
+            <tbody id="pred-table-body"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Analyze ───────────────────────────────────────────────────────── -->
+    <div id="tab-analyze" class="tab-content">
+      <h2 class="section-title">Analyze Process Record</h2>
+      <p class="section-subtitle">
+        Submit a process record to run the full 4-agent pipeline:
+        Process Monitoring → Quality Analysis → Defect Prediction → Optimization.
+      </p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#57606a;display:block;margin-bottom:8px;">
+            Process Parameters (JSON) <span class="tag">USER-PROVIDED DATA</span>
+          </label>
+          <textarea id="record-input" rows="10">{
+  "air_temperature": 304.8,
+  "process_temperature": 315.2,
+  "rotational_speed": 1180.0,
+  "torque": 68.5,
+  "tool_wear": 235.0
+}</textarea>
+          <div style="margin-top:8px;display:flex;gap:8px;">
+            <button class="btn btn--primary" onclick="analyzeRecord()">Run Pipeline</button>
+            <button class="btn btn--secondary" onclick="loadDemoNormal()">Load Normal</button>
+            <button class="btn btn--secondary" onclick="loadDemoHighRisk()">Load High-Risk</button>
+          </div>
+          <div id="analyze-error" class="alert alert--danger mt-3" style="display:none;"></div>
+        </div>
+
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#57606a;margin-bottom:8px;">Pipeline Result</div>
+          <div id="analyze-result">
+            <div class="empty-state">Submit a record to see the pipeline result.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="analyze-full" class="mt-4" style="display:none;">
+        <div style="font-size:12px;font-weight:600;color:#57606a;margin-bottom:8px;">Full JSON Response</div>
+        <pre class="result-json" id="analyze-json"></pre>
+      </div>
+    </div>
+
+    <!-- ── Predictions ───────────────────────────────────────────────────── -->
+    <div id="tab-predictions" class="tab-content">
+      <h2 class="section-title">Defect Predictions</h2>
+      <p class="section-subtitle">
+        Predictions produced by the trained XGBoost model (v1.0).
+        Test set metrics: F1=0.82 &nbsp;|&nbsp; PR-AUC=0.92 &nbsp;|&nbsp; ROC-AUC=0.98
+        &nbsp;·&nbsp; <span class="tag">REAL PUBLIC DATA</span>
+      </p>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Time</th><th>Record ID</th><th>Class</th><th>Probability</th><th>Risk</th><th>Model</th></tr></thead>
+          <tbody id="predictions-body"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Anomalies ─────────────────────────────────────────────────────── -->
+    <div id="tab-anomalies" class="tab-content">
+      <h2 class="section-title">Detected Anomalies</h2>
+      <p class="section-subtitle">
+        Isolation Forest + IQR statistical thresholds.
+        Thresholds derived from training data — not certified industrial safety limits.
+      </p>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Time</th><th>Record ID</th><th>Severity</th><th>Affected Parameters</th><th>IF Score</th></tr></thead>
+          <tbody id="anomalies-body"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Recommendations ──────────────────────────────────────────────── -->
+    <div id="tab-recommendations" class="tab-content">
+      <h2 class="section-title">Recommendations Awaiting Engineer Review</h2>
+      <p class="section-subtitle">
+        Human-in-the-loop: every recommendation must be approved or rejected by a qualified engineer
+        before any process action is taken.
+      </p>
+      <div id="recs-container">
+        <div class="empty-state">Loading...</div>
+      </div>
+    </div>
+
+    <!-- ── Model Performance ─────────────────────────────────────────────── -->
+    <div id="tab-model" class="tab-content">
+      <h2 class="section-title">Model Performance</h2>
+      <p class="section-subtitle">
+        Metrics from actual model evaluation on held-out test set (300 records).
+        Numbers are not fabricated. See <code>ml/evaluation/</code> for full results.
+      </p>
+
+      <div class="grid grid--2 mb-4">
+        <div class="card">
+          <div class="card__label">Defect Prediction Model</div>
+          <div style="margin-top:8px;font-size:13px;">
+            <div class="param-row"><span class="param-row__name">Algorithm</span><span class="param-row__value">XGBoost (selected by val PR-AUC)</span></div>
+            <div class="param-row"><span class="param-row__name">Version</span><span class="param-row__value mono">v1.0</span></div>
+            <div class="param-row"><span class="param-row__name">Test F1</span><span class="param-row__value text-success">0.8217</span></div>
+            <div class="param-row"><span class="param-row__name">Test PR-AUC</span><span class="param-row__value text-success">0.9198</span></div>
+            <div class="param-row"><span class="param-row__name">Test ROC-AUC</span><span class="param-row__value text-success">0.9755</span></div>
+            <div class="param-row"><span class="param-row__name">Test set size</span><span class="param-row__value">300 records</span></div>
+          </div>
+          <div class="card__source">Source: ml/evaluation/model_version_v1.0.json</div>
+        </div>
+
+        <div class="card">
+          <div class="card__label">Experiment 1: Model Comparison (Validation Set)</div>
+          <div style="margin-top:8px;" class="table-wrapper">
+            <table>
+              <thead><tr><th>Model</th><th>Val F1</th><th>Val PR-AUC</th><th>Val ROC-AUC</th></tr></thead>
+              <tbody>
+                <tr><td>Logistic Regression</td><td>0.4767</td><td>0.5454</td><td>0.7291</td></tr>
+                <tr><td>Random Forest</td><td>0.7200</td><td>0.7946</td><td>0.9276</td></tr>
+                <tr><td style="font-weight:600;">XGBoost ✓</td><td style="font-weight:600;">0.6977</td><td style="font-weight:600;">0.8300</td><td style="font-weight:600;">0.9405</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card__source">XGBoost selected: highest val PR-AUC (imbalanced class metric)</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__label">SHAP Feature Importance (Global, Training Set)</div>
+        <div id="shap-bars" style="margin-top:16px;">
+          <!-- filled by JS -->
+          <div class="importance-bar"><span class="importance-bar__label">tool_wear</span><div class="importance-bar__track"><div class="importance-bar__fill" style="width:100%"></div></div><span class="importance-bar__value">highest</span></div>
+          <div class="importance-bar"><span class="importance-bar__label">torque</span><div class="importance-bar__track"><div class="importance-bar__fill" style="width:76%"></div></div><span class="importance-bar__value">2nd</span></div>
+          <div class="importance-bar"><span class="importance-bar__label">rotational_speed</span><div class="importance-bar__track"><div class="importance-bar__fill" style="width:34%"></div></div><span class="importance-bar__value">3rd</span></div>
+          <div class="importance-bar"><span class="importance-bar__label">air_temperature</span><div class="importance-bar__track"><div class="importance-bar__fill" style="width:12%"></div></div><span class="importance-bar__value">4th</span></div>
+          <div class="importance-bar"><span class="importance-bar__label">process_temperature</span><div class="importance-bar__track"><div class="importance-bar__fill" style="width:8%"></div></div><span class="importance-bar__value">5th</span></div>
+        </div>
+        <div class="card__source mt-3">
+          Method: SHAP TreeExplainer on XGBoost model.
+          Feature contributions indicate association, not causation.
+          Source: ml/evaluation/global_feature_importance.json
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Chat ──────────────────────────────────────────────────────────── -->
+    <div id="tab-chat" class="tab-content">
+      <h2 class="section-title">AI Assistant (IBM Granite)</h2>
+      <p class="section-subtitle">
+        Answers are grounded in available process data and retrieved documentation.
+        Granite narrates ML evidence — it does not perform calculations or invent numbers.
+        <span class="tag">Requires IBM watsonx.ai credentials in .env</span>
+      </p>
+
+      <div class="chat-container" id="chat-messages">
+        <div class="chat-message chat-message--assistant">
+          Hello. I am the IndustrialGuard AI assistant, powered by IBM Granite.
+          I can help you understand process anomalies, defect predictions, and recommendations.
+          Ask me about a specific record or a general quality question.
+          <div class="chat-message__source">System ready · Granite grounded mode</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:8px;">
+        <span style="font-size:12px;color:#57606a;">Quick questions:</span>
+        <button class="btn btn--secondary" style="font-size:11px;padding:3px 10px;margin:4px 2px;" onclick="quickChat('Which parameters are most associated with defects?')">Top defect factors</button>
+        <button class="btn btn--secondary" style="font-size:11px;padding:3px 10px;margin:4px 2px;" onclick="quickChat('What does high tool wear indicate about process quality?')">Tool wear impact</button>
+        <button class="btn btn--secondary" style="font-size:11px;padding:3px 10px;margin:4px 2px;" onclick="quickChat('What corrective actions are recommended for elevated torque?')">Torque correction</button>
+        <button class="btn btn--secondary" style="font-size:11px;padding:3px 10px;margin:4px 2px;" onclick="quickChat('Show me the model performance summary')">Model summary</button>
+      </div>
+
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" type="text"
+               placeholder="Ask about a process record, parameter, or quality issue..."
+               onkeydown="if(event.key==='Enter') sendChat()" />
+        <button class="btn btn--primary" id="chat-btn" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Footer ─────────────────────────────────────────────────────────── -->
+  <footer class="app-footer">
+    IndustrialGuard AI &nbsp;·&nbsp; IBM Problem Statement #37 &nbsp;·&nbsp;
+    Decision-support prototype &nbsp;·&nbsp;
+    Not validated for certified industrial deployment &nbsp;·&nbsp;
+    All predictions require human engineer review &nbsp;·&nbsp;
+    Backend: <a href="http://localhost:8000/docs" target="_blank" style="color:#3b82d4;">API docs</a>
+  </footer>
+
+</div>
+
+<!-- ── JavaScript ──────────────────────────────────────────────────────────── -->
+<script>
+const API = "http://localhost:8000";
+
+// ── Tab navigation ───────────────────────────────────────────────────────────
+function showTab(name, el) {
+  document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".app-nav__link").forEach(l => l.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.add("active");
+  if (el) el.classList.add("active");
+
+  if (name === "predictions")     loadPredictions();
+  if (name === "anomalies")       loadAnomalies();
+  if (name === "recommendations") loadRecommendations();
+  return false;
+}
+
+// ── API helpers ──────────────────────────────────────────────────────────────
+async function apiFetch(path, opts) {
+  const r = await fetch(API + path, {
+    headers: { "Content-Type": "application/json" },
+    ...opts,
+  });
+  if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  return r.json();
+}
+
+// ── API status check ─────────────────────────────────────────────────────────
+async function checkApiStatus() {
+  const dot  = document.getElementById("status-dot");
+  const text = document.getElementById("status-text");
+  try {
+    const h = await apiFetch("/health");
+    dot.className  = "status-dot status-dot--green";
+    text.textContent = "Backend online";
+  } catch {
+    dot.className  = "status-dot status-dot--red";
+    text.textContent = "Backend offline — run: python app.py";
+  }
+}
+
+// ── Severity / badge helpers ─────────────────────────────────────────────────
+function badge(level) {
+  const lvl = (level || "UNKNOWN").toUpperCase().replace(/[- ]/g, "_");
+  const map = {
+    CRITICAL:"critical", HIGH:"high", ELEVATED_RISK:"elevated", ELEVATED:"elevated",
+    MEDIUM:"medium", CAUTION:"medium", LOW:"low", NORMAL:"normal",
+    DEFECTIVE:"high", AWAITING_REVIEW:"medium", APPROVED:"normal", REJECTED:"danger",
+  };
+  const cls = map[lvl] || "unknown";
+  return `<span class="badge badge--${cls}">${level||"UNKNOWN"}</span>`;
+}
+
+function probBar(prob) {
+  if (prob === null || prob === undefined) return "&mdash;";
+  const pct = (prob * 100).toFixed(1);
+  const cls = prob >= 0.6 ? "danger" : prob >= 0.3 ? "warning" : "";
+  return `<div>${pct}%</div>
+          <div class="prob-bar"><div class="prob-bar__fill ${cls ? "prob-bar__fill--"+cls : ""}" style="width:${pct}%"></div></div>`;
+}
+
+function fmt(ts) {
+  if (!ts) return "&mdash;";
+  return new Date(ts).toLocaleTimeString();
+}
+
+// ── Overview ─────────────────────────────────────────────────────────────────
+async function loadOverview() {
+  try {
+    const m = await apiFetch("/api/metrics?hours=24");
+    document.getElementById("m-records").textContent   = m.total_records;
+    document.getElementById("m-anomalies").textContent = m.anomaly_count;
+    document.getElementById("m-anomalies-sub").textContent = `${m.high_severity_anomalies} high severity`;
+    const dv = document.getElementById("m-defective");
+    dv.textContent = m.predicted_defective;
+    dv.className = "card__value" + (m.defect_rate > 0.15 ? " card__value--danger" : "");
+    document.getElementById("m-defect-rate").textContent = `${(m.defect_rate*100).toFixed(1)}% rate`;
+    const pv = document.getElementById("m-pending");
+    pv.textContent = m.pending_recommendations;
+    pv.className = "card__value" + (m.pending_recommendations > 0 ? " card__value--warning" : "");
+  } catch(e) {
+    console.warn("Metrics load failed:", e);
+  }
+
+  try {
+    const statuses = await apiFetch("/api/process-status?limit=10");
+    const tbody = document.getElementById("status-table-body");
+    if (!statuses.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No records yet. Use "Analyze Record" to submit one.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = statuses.map(r => `
+      <tr>
+        <td class="mono muted">${fmt(r.timestamp)}</td>
+        <td class="mono">${r.record_id}</td>
+        <td>${badge(r.quality_status)}</td>
+        <td><span class="tag">${r.data_source_label}</span></td>
+      </tr>`).join("");
+  } catch(e) { console.warn("Status load failed:", e); }
+
+  try {
+    const preds = await apiFetch("/api/predictions?limit=5");
+    const tbody = document.getElementById("pred-table-body");
+    const highRisk = preds.filter(p => p.predicted_class === "DEFECTIVE");
+    if (!highRisk.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No defective predictions yet.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = highRisk.map(p => `
+      <tr>
+        <td class="mono muted">${fmt(p.timestamp)}</td>
+        <td class="mono">${p.record_id}</td>
+        <td>${badge(p.predicted_class)}</td>
+        <td>${probBar(p.probability)}</td>
+        <td>${badge(p.risk_level)}</td>
+        <td class="mono text-xs">${p.model_version||"&mdash;"}</td>
+      </tr>`).join("");
+  } catch(e) { console.warn("Predictions overview load failed:", e); }
+}
+
+// ── Analyze Record ───────────────────────────────────────────────────────────
+function loadDemoNormal() {
+  document.getElementById("record-input").value = JSON.stringify({
+    air_temperature: 300.1, process_temperature: 310.0,
+    rotational_speed: 1525.0, torque: 39.2, tool_wear: 110.0
+  }, null, 2);
+}
+
+function loadDemoHighRisk() {
+  document.getElementById("record-input").value = JSON.stringify({
+    air_temperature: 304.8, process_temperature: 315.2,
+    rotational_speed: 1180.0, torque: 68.5, tool_wear: 235.0
+  }, null, 2);
+}
+
+async function analyzeRecord() {
+  const errEl  = document.getElementById("analyze-error");
+  const resEl  = document.getElementById("analyze-result");
+  const jsonEl = document.getElementById("analyze-json");
+  const fullEl = document.getElementById("analyze-full");
+  errEl.style.display = "none";
+  resEl.innerHTML = '<div class="empty-state"><span class="spinner"></span> Running 4-agent pipeline...</div>';
+
+  let params;
+  try {
+    params = JSON.parse(document.getElementById("record-input").value);
+  } catch(e) {
+    errEl.textContent = "Invalid JSON: " + e.message;
+    errEl.style.display = "block";
+    resEl.innerHTML = "";
+    return;
+  }
+
+  try {
+    const r = await apiFetch("/api/analyze", {
+      method: "POST",
+      body: JSON.stringify({ parameters: params, data_source_label: "USER-PROVIDED DATA" }),
+    });
+
+    const pred   = r.prediction || {};
+    const stages = r.pipeline_result?.stages || {};
+    const anom   = stages.process_monitoring?.anomaly_detection || {};
+    const recs   = r.final_recommendations || [];
+    const qa     = stages.quality_analysis || {};
+    const factors = qa.contributing_factors || [];
+
+    resEl.innerHTML = `
+      <div class="card mb-3">
+        <div class="flex items-center gap-3 mb-3">
+          ${badge(r.final_status)} ${badge(r.final_risk_level)}
+          <span class="text-xs text-muted">&nbsp;${r.duration_ms?.toFixed(0)}ms</span>
+        </div>
+        <div class="param-row"><span class="param-row__name">Prediction</span><span>${badge(pred.predicted_class)}</span></div>
+        <div class="param-row"><span class="param-row__name">Defect Probability</span><span style="width:160px">${probBar(pred.probability)}</span></div>
+        <div class="param-row"><span class="param-row__name">Anomaly</span><span>${badge(anom.status)} &nbsp;severity: ${anom.severity||"?"}</span></div>
+        <div class="param-row"><span class="param-row__name">Model Version</span><span class="mono">${pred.model_version||"?"}</span></div>
+      </div>
+
+      ${anom.statistical_violations?.length ? `
+      <div class="card mb-3">
+        <div class="card__label mb-2">Statistical Violations</div>
+        ${anom.statistical_violations.map(v => `
+          <div class="param-row">
+            <span class="param-row__name">${v.parameter}</span>
+            <span>${v.value} <span class="param-row__unit">(${v.direction} range, ${v.deviation_iqr_units} IQR)</span></span>
+          </div>`).join("")}
+      </div>` : ""}
+
+      ${factors.length ? `
+      <div class="card mb-3">
+        <div class="card__label mb-2">Contributing Factors (Association, Not Causation)</div>
+        ${factors.slice(0,3).map(f => `
+          <div class="importance-bar">
+            <span class="importance-bar__label">${f.feature}</span>
+            <div class="importance-bar__track"><div class="importance-bar__fill" style="width:${Math.min(100, f.relevance_score*25)}%"></div></div>
+            <span class="importance-bar__value">${f.relevance_score?.toFixed(2)}</span>
+          </div>`).join("")}
+      </div>` : ""}
+
+      ${recs.length ? `
+      <div class="rec-card">
+        <div class="rec-card__action">${recs[0].action}</div>
+        <div class="rec-card__basis">Basis: <strong>${recs[0].basis||"unknown"}</strong> &nbsp;|&nbsp; Uncertainty: ${recs[0].uncertainty||"?"}</div>
+        ${recs[0].evidence ? `<div class="rec-card__evidence">${recs[0].evidence}</div>` : ""}
+        <div class="rec-card__footer">Human engineer review required before any process action.</div>
+      </div>` : `<div class="alert alert--info">No specific recommendations generated from current evidence.</div>`}
+
+      <div class="text-xs text-muted">${r.disclaimer}</div>
+    `;
+
+    jsonEl.textContent = JSON.stringify(r.pipeline_result?.stages, null, 2);
+    fullEl.style.display = "block";
+
+    // Refresh overview metrics
+    loadOverview();
+
+  } catch(e) {
+    errEl.textContent = "API error: " + e.message;
+    errEl.style.display = "block";
+    resEl.innerHTML = "";
+  }
+}
+
+// ── Predictions ──────────────────────────────────────────────────────────────
+async function loadPredictions() {
+  const tbody = document.getElementById("predictions-body");
+  tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>`;
+  try {
+    const preds = await apiFetch("/api/predictions?limit=50");
+    if (!preds.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No predictions yet.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = preds.map(p => `
+      <tr>
+        <td class="mono muted">${fmt(p.timestamp)}</td>
+        <td class="mono">${p.record_id}</td>
+        <td>${badge(p.predicted_class)}</td>
+        <td>${probBar(p.probability)}</td>
+        <td>${badge(p.risk_level)}</td>
+        <td class="mono text-xs">${p.model_version||"&mdash;"}</td>
+      </tr>`).join("");
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state text-danger">Failed to load: ${e.message}</td></tr>`;
+  }
+}
+
+// ── Anomalies ────────────────────────────────────────────────────────────────
+async function loadAnomalies() {
+  const tbody = document.getElementById("anomalies-body");
+  tbody.innerHTML = `<tr><td colspan="5" class="empty-state"><span class="spinner"></span></td></tr>`;
+  try {
+    const anoms = await apiFetch("/api/anomalies?limit=50");
+    if (!anoms.length) {
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No anomalies detected yet.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = anoms.map(a => {
+      const params = (a.affected_parameters||[]).map(p=>p.parameter).join(", ") || "&mdash;";
+      return `<tr>
+        <td class="mono muted">${fmt(a.timestamp)}</td>
+        <td class="mono">${a.record_id}</td>
+        <td>${badge(a.severity)}</td>
+        <td class="text-sm">${params}</td>
+        <td class="mono text-xs">${a.isolation_forest_score?.toFixed(3)||"&mdash;"}</td>
+      </tr>`;
+    }).join("");
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state text-danger">Failed to load: ${e.message}</td></tr>`;
+  }
+}
+
+// ── Recommendations ──────────────────────────────────────────────────────────
+async function loadRecommendations() {
+  const container = document.getElementById("recs-container");
+  container.innerHTML = `<div class="empty-state"><span class="spinner"></span></div>`;
+  try {
+    const recs = await apiFetch("/api/recommendations?limit=50");
+    const pending = recs.filter(r => r.status === "AWAITING_REVIEW");
+    if (!pending.length) {
+      container.innerHTML = `<div class="empty-state">No pending recommendations.</div>`;
+      return;
+    }
+    container.innerHTML = pending.map(r => `
+      <div class="rec-card" id="rec-${r.recommendation_id}">
+        <div class="flex items-center justify-between mb-2">
+          <div class="rec-card__action">${r.action}</div>
+          ${badge(r.status)}
+        </div>
+        <div class="rec-card__basis">Basis: <strong>${r.basis||"unknown"}</strong> &nbsp;|&nbsp; Uncertainty: ${r.uncertainty||"?"}</div>
+        ${r.evidence ? `<div class="rec-card__evidence">${r.evidence}</div>` : ""}
+        ${r.rag_source ? `<div class="rec-card__source">RAG source: ${r.rag_source}</div>` : ""}
+        <div class="rec-card__footer">
+          Human engineer review required.
+          <div style="margin-top:8px;display:flex;gap:8px;">
+            <button class="btn btn--approve" onclick="reviewRec('${r.recommendation_id}','APPROVED')">Approve</button>
+            <button class="btn btn--reject"  onclick="reviewRec('${r.recommendation_id}','REJECTED')">Reject</button>
+          </div>
+        </div>
+      </div>`).join("");
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state text-danger">Failed to load: ${e.message}</div>`;
+  }
+}
+
+async function reviewRec(id, action) {
+  const reviewerId = prompt("Enter your engineer ID:", "engineer_001");
+  if (!reviewerId) return;
+  try {
+    await apiFetch(`/api/recommendations/${id}/review`, {
+      method: "POST",
+      body: JSON.stringify({ action, reviewer_id: reviewerId }),
+    });
+    document.getElementById("rec-"+id).remove();
+    const remaining = document.querySelectorAll("[id^=rec-]").length;
+    if (remaining === 0)
+      document.getElementById("recs-container").innerHTML = `<div class="empty-state">All recommendations reviewed.</div>`;
+  } catch(e) {
+    alert("Review failed: " + e.message);
+  }
+}
+
+// ── Chat ─────────────────────────────────────────────────────────────────────
+async function sendChat() {
+  const input = document.getElementById("chat-input");
+  const btn   = document.getElementById("chat-btn");
+  const msg   = input.value.trim();
+  if (!msg) return;
+
+  appendChat(msg, "user");
+  input.value = "";
+  btn.disabled = true;
+  btn.textContent = "...";
+
+  const thinkingId = appendChat("Thinking...", "assistant");
+
+  try {
+    const r = await apiFetch("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({ message: msg }),
+    });
+    removeChat(thinkingId);
+    appendChat(r.response, "assistant",
+      r.rag_sources?.length ? "Sources: " + r.rag_sources.join(", ") : null);
+  } catch(e) {
+    removeChat(thinkingId);
+    appendChat("Error: " + e.message + "\n\nMake sure IBM watsonx.ai credentials are set in .env", "assistant");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Send";
+  }
+}
+
+function quickChat(msg) {
+  document.getElementById("chat-input").value = msg;
+  sendChat();
+}
+
+let _chatId = 0;
+function appendChat(text, role, source) {
+  const id = "cm-" + (++_chatId);
+  const c  = document.getElementById("chat-messages");
+  const el = document.createElement("div");
+  el.id = id;
+  el.className = `chat-message chat-message--${role}`;
+  el.innerHTML = text.replace(/\n/g,"<br>") +
+    (source ? `<div class="chat-message__source">${source}</div>` : "");
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+  return id;
+}
+
+function removeChat(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+checkApiStatus();
+loadOverview();
+setInterval(checkApiStatus, 30000);
+setInterval(loadOverview, 60000);
+</script>
+
+</body>
+</html>

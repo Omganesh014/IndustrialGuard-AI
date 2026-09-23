@@ -70,7 +70,7 @@ class TestSplitRatios:
         assert abs(TRAIN_RATIO + VAL_RATIO + TEST_RATIO - 1.0) < 1e-6
 
     def test_no_label_leakage_in_split(self):
-        """Test IDs — train/val/test must be disjoint."""
+        """Test IDs -- train/val/test must be disjoint."""
         df = make_sample_df(200)
         from sklearn.model_selection import train_test_split
 

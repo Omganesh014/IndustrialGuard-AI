@@ -4,9 +4,9 @@ rag/retrieval/retriever.py
 RAG Retrieval module for IndustrialGuard AI.
 
 Provides:
-- retrieve(query, top_k) — returns list of ranked passages with metadata
+- retrieve(query, top_k) -- returns list of ranked passages with metadata
 - Source attribution preserved in every result
-- Tier label preserved — Tier 3 results labeled as project-generated
+- Tier label preserved -- Tier 3 results labeled as project-generated
 
 This module is called by:
 - Quality Analysis Agent (RCA evidence retrieval)
@@ -89,10 +89,15 @@ def retrieve(query: str, top_k: int = 3, min_tier: int = 1) -> list[dict]:
         logger.warning(f"RAG unavailable: {e}. Returning empty results.")
         return []
 
+    count = collection.count()
+    if count == 0:
+        logger.warning("RAG collection is empty. Run rag/vectorstore/setup.py first.")
+        return []
+
     try:
         results = collection.query(
             query_texts=[query],
-            n_results=min(top_k, collection.count()),
+            n_results=min(top_k, count),
             include=["documents", "metadatas", "distances"],
         )
     except Exception as e:
@@ -120,9 +125,9 @@ def retrieve(query: str, top_k: int = 3, min_tier: int = 1) -> list[dict]:
             "data_source_label": meta.get("data_source_label", "unknown"),
             "distance": round(float(dist), 4),
             "relevance_note": (
-                "[Project-generated demonstration knowledge — not an official standard]"
+                "[Project-generated demonstration knowledge -- not an official standard]"
                 if is_synthetic
-                else f"[Source: {meta.get('source', 'unknown')} — {tier_label}]"
+                else f"[Source: {meta.get('source', 'unknown')} -- {tier_label}]"
             ),
         })
 
@@ -132,7 +137,7 @@ def retrieve(query: str, top_k: int = 3, min_tier: int = 1) -> list[dict]:
 
 def test_retrieval(queries: list[str] | None = None) -> None:
     """
-    Quick retrieval test — used for Experiment 4 (RAG evaluation).
+    Quick retrieval test -- used for Experiment 4 (RAG evaluation).
     Prints top passages for each test query.
     """
     if queries is None:
@@ -147,7 +152,7 @@ def test_retrieval(queries: list[str] | None = None) -> None:
         print(f"\nQuery: {q}")
         results = retrieve(q, top_k=2)
         if not results:
-            print("  No results — vector store may be empty.")
+            print("  No results -- vector store may be empty.")
             continue
         for i, r in enumerate(results):
             print(f"  Result {i+1}: [{r['tier_label']}] {r['source']}")

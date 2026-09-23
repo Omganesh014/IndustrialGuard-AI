@@ -1,0 +1,385 @@
+{
+  "id": "industrialguard-ai-workflow",
+  "name": "IndustrialGuard AI — 4-Agent Quality Control Pipeline",
+  "description": "Agentic manufacturing quality control workflow. Implements IBM Problem Statement #37: Process Monitoring → Quality Analysis → Defect Prediction → Process Optimization, grounded in IBM Granite + RAG knowledge base.",
+  "version": "1.0.0",
+  "last_tested_langflow_version": "1.x",
+  "note": "Gate A pending: IBM watsonx.ai access not yet provisioned. This workflow file is ready for import once credentials are confirmed (see DECISION_LOG.md DECISION-001). Use USE_CACHED_GRANITE_RESPONSES=true for demo mode without IBM API.",
+  "data": {
+    "nodes": [
+      {
+        "id": "input_node",
+        "type": "CustomComponent",
+        "display_name": "Process Record Input",
+        "description": "Receives raw manufacturing process parameter payload. Keys must match trained feature names: air_temperature, process_temperature, rotational_speed, torque, tool_wear.",
+        "data": {
+          "node": {
+            "template": {
+              "record_json": {
+                "type": "str",
+                "display_name": "Process Record (JSON)",
+                "info": "JSON object with process parameters. Example: {\"air_temperature\": 301.2, \"process_temperature\": 311.8, \"rotational_speed\": 1395.0, \"torque\": 64.5, \"tool_wear\": 218.0}",
+                "required": true
+              },
+              "record_id": {
+                "type": "str",
+                "display_name": "Record ID (optional)",
+                "info": "Optional client-provided identifier. Auto-generated if not provided.",
+                "required": false
+              },
+              "data_source_label": {
+                "type": "str",
+                "display_name": "Data Source Label",
+                "value": "SIMULATED STREAM",
+                "info": "Provenance label: REAL PUBLIC DATA | SYNTHETIC DATA | SIMULATED STREAM | USER-PROVIDED DATA",
+                "required": true
+              }
+            },
+            "outputs": [
+              {"name": "process_record", "display_name": "Process Record", "method": "build"}
+            ]
+          }
+        },
+        "position": {"x": 100, "y": 300}
+      },
+      {
+        "id": "agent1_monitoring",
+        "type": "CustomComponent",
+        "display_name": "Agent 1: Process Monitoring Agent",
+        "description": "Validates physical parameter bounds, detects statistical anomalies (IQR + Isolation Forest), and forwards structured monitoring output downstream. Never uses LLM for anomaly detection.",
+        "data": {
+          "node": {
+            "description": "Calls: agents.monitoring.process_monitoring_agent.run(record, record_id). Returns structured ProcessMonitoringOutput with anomaly_detection sub-object.",
+            "template": {
+              "backend_url": {
+                "type": "str",
+                "display_name": "Backend API URL",
+                "value": "http://localhost:8000",
+                "info": "FastAPI backend endpoint. Used to log results to database.",
+                "required": false
+              }
+            },
+            "inputs": [{"name": "process_record", "display_name": "Process Record"}],
+            "outputs": [
+              {"name": "monitoring_output", "display_name": "Monitoring Output", "method": "run_monitoring"}
+            ]
+          }
+        },
+        "position": {"x": 400, "y": 300}
+      },
+      {
+        "id": "agent2_quality",
+        "type": "CustomComponent",
+        "display_name": "Agent 2: Quality Analysis Agent (+ RCA)",
+        "description": "Statistical deviation analysis, IQR violation detection, correlation analysis, and Root-Cause Analysis (RCA). Queries ChromaDB RAG store for supporting documentation. Calls IBM Granite for narration only — not for numerical analysis.",
+        "data": {
+          "node": {
+            "description": "Calls: agents.quality_analysis.quality_analysis_agent.run(monitoring_output). RCA is a capability of this agent — not a separate 5th agent.",
+            "template": {
+              "rag_top_k": {
+                "type": "int",
+                "display_name": "RAG Top-K",
+                "value": 3,
+                "info": "Number of ChromaDB passages to retrieve per query.",
+                "required": false
+              }
+            },
+            "inputs": [{"name": "monitoring_output", "display_name": "Monitoring Output"}],
+            "outputs": [
+              {"name": "quality_output", "display_name": "Quality Analysis Output", "method": "run_quality_analysis"}
+            ]
+          }
+        },
+        "position": {"x": 700, "y": 300}
+      },
+      {
+        "id": "rag_retrieval",
+        "type": "CustomComponent",
+        "display_name": "RAG: ChromaDB Knowledge Retriever",
+        "description": "Retrieves relevant manufacturing knowledge from the 3-tier ChromaDB vector store (12 chunks, default embedding). Used by Quality Analysis and Optimization agents.",
+        "data": {
+          "node": {
+            "description": "Calls: rag.retrieval.retriever.retrieve(query, top_k). Sources: Tier 1 (ISO 13374), Tier 2 (Tool Wear Guide), Tier 3 (Demo SOP). Returns passages with source + tier labels.",
+            "template": {
+              "chroma_path": {
+                "type": "str",
+                "display_name": "ChromaDB Path",
+                "value": "rag/vectorstore/chroma_db",
+                "required": true
+              },
+              "collection_name": {
+                "type": "str",
+                "display_name": "Collection Name",
+                "value": "industrialguard_knowledge",
+                "required": true
+              }
+            },
+            "inputs": [{"name": "query", "display_name": "Retrieval Query"}],
+            "outputs": [
+              {"name": "passages", "display_name": "Retrieved Passages", "method": "retrieve"}
+            ]
+          }
+        },
+        "position": {"x": 700, "y": 550}
+      },
+      {
+        "id": "agent3_prediction",
+        "type": "CustomComponent",
+        "display_name": "Agent 3: Defect Prediction Agent",
+        "description": "Runs the trained XGBoost v1.0 model (Test F1=0.8217, PR-AUC=0.9198, ROC-AUC=0.9755) on scaled feature vector. Computes local SHAP attributions. Never uses LLM for prediction.",
+        "data": {
+          "node": {
+            "description": "Calls: agents.defect_prediction.defect_prediction_agent.run(quality_output). Model: ml/models/defect_predictor_v1.0.pkl. Features: air_temperature, process_temperature, rotational_speed, torque, tool_wear.",
+            "template": {
+              "model_path": {
+                "type": "str",
+                "display_name": "Model Path",
+                "value": "ml/models/defect_predictor_v1.0.pkl",
+                "required": true
+              },
+              "defect_threshold": {
+                "type": "float",
+                "display_name": "Defect Probability Threshold",
+                "value": 0.5,
+                "info": "Configurable threshold. Default 0.5. Adjust based on precision/recall tradeoff requirements.",
+                "required": false
+              }
+            },
+            "inputs": [{"name": "quality_output", "display_name": "Quality Analysis Output"}],
+            "outputs": [
+              {"name": "defect_output", "display_name": "Defect Prediction Output", "method": "run_prediction"}
+            ]
+          }
+        },
+        "position": {"x": 1000, "y": 300}
+      },
+      {
+        "id": "agent4_optimization",
+        "type": "CustomComponent",
+        "display_name": "Agent 4: Process Optimization Agent",
+        "description": "Generates traceable corrective recommendations using 3 evidence-based methods ONLY: (a) rule-based operating ranges, (b) historical low-defect comparison, (c) what-if model inference. LLM narrates — never invents numerical values.",
+        "data": {
+          "node": {
+            "description": "Calls: agents.optimization.process_optimization_agent.run(defect_output). Recommendations saved to DB as AWAITING_REVIEW — human engineer must approve/reject via /api/recommendations/{id}/review.",
+            "template": {
+              "enable_what_if": {
+                "type": "bool",
+                "display_name": "Enable What-If Inference",
+                "value": true,
+                "info": "Perturbs features through trained model to estimate probability change from parameter adjustment.",
+                "required": false
+              },
+              "recommendation_limit": {
+                "type": "int",
+                "display_name": "Max Recommendations",
+                "value": 3,
+                "info": "Maximum number of recommendations to surface per record.",
+                "required": false
+              }
+            },
+            "inputs": [{"name": "defect_output", "display_name": "Defect Prediction Output"}],
+            "outputs": [
+              {"name": "optimization_output", "display_name": "Optimization Output", "method": "run_optimization"}
+            ]
+          }
+        },
+        "position": {"x": 1300, "y": 300}
+      },
+      {
+        "id": "granite_llm",
+        "type": "CustomComponent",
+        "display_name": "IBM Granite Guardian 8B (watsonx.ai)",
+        "description": "IBM Granite model for natural-language narration, RAG synthesis, explanation generation, and report generation. Model ID: ibm/granite-guardian-8b. Endpoint: https://us-south.ml.cloud.ibm.com. NEVER used for numerical calculations or predictions.",
+        "data": {
+          "node": {
+            "description": "Calls: backend.services.granite_client.generate_narrative(task, context). Credentials from .env: WATSONX_API_KEY, WATSONX_PROJECT_ID. Set USE_CACHED_GRANITE_RESPONSES=true for demo/CI mode.",
+            "template": {
+              "model_id": {
+                "type": "str",
+                "display_name": "Model ID",
+                "value": "ibm/granite-guardian-8b",
+                "info": "IBM Granite model identifier. Do not change without updating DECISION_LOG.md.",
+                "required": true
+              },
+              "watsonx_url": {
+                "type": "str",
+                "display_name": "watsonx.ai URL",
+                "value": "https://us-south.ml.cloud.ibm.com",
+                "required": true
+              },
+              "max_new_tokens": {
+                "type": "int",
+                "display_name": "Max New Tokens",
+                "value": 400,
+                "required": false
+              },
+              "temperature": {
+                "type": "float",
+                "display_name": "Temperature",
+                "value": 0.2,
+                "info": "Low temperature for factual narration. Do not increase above 0.4.",
+                "required": false
+              }
+            },
+            "inputs": [
+              {"name": "task", "display_name": "Task Key"},
+              {"name": "context", "display_name": "ML Analysis Context (JSON)"}
+            ],
+            "outputs": [
+              {"name": "narrative", "display_name": "Granite Narrative", "method": "generate"}
+            ]
+          }
+        },
+        "position": {"x": 1300, "y": 550}
+      },
+      {
+        "id": "output_node",
+        "type": "CustomComponent",
+        "display_name": "Pipeline Result Output",
+        "description": "Aggregates outputs from all 4 agents into the final PipelineResult JSON. Persists to SQLite database via FastAPI backend. All recommendations stored with status=AWAITING_REVIEW.",
+        "data": {
+          "node": {
+            "description": "Returns: {pipeline_run_id, timestamp, final_status, final_risk_level, final_prediction, final_recommendations, stages: {process_monitoring, quality_analysis, defect_prediction, process_optimization}}",
+            "template": {
+              "persist_to_db": {
+                "type": "bool",
+                "display_name": "Persist to Database",
+                "value": true,
+                "required": false
+              }
+            },
+            "inputs": [{"name": "optimization_output", "display_name": "Optimization Output"}],
+            "outputs": [
+              {"name": "pipeline_result", "display_name": "Pipeline Result (JSON)", "method": "aggregate"}
+            ]
+          }
+        },
+        "position": {"x": 1600, "y": 300}
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_input_to_agent1",
+        "source": "input_node",
+        "sourceHandle": "process_record",
+        "target": "agent1_monitoring",
+        "targetHandle": "process_record",
+        "description": "Raw parameter payload to Process Monitoring Agent"
+      },
+      {
+        "id": "edge_agent1_to_agent2",
+        "source": "agent1_monitoring",
+        "sourceHandle": "monitoring_output",
+        "target": "agent2_quality",
+        "targetHandle": "monitoring_output",
+        "description": "Structured monitoring output (NORMAL/CAUTION/CRITICAL + anomaly detection) to Quality Analysis Agent"
+      },
+      {
+        "id": "edge_agent2_to_rag",
+        "source": "agent2_quality",
+        "sourceHandle": "rag_query",
+        "target": "rag_retrieval",
+        "targetHandle": "query",
+        "description": "Quality analysis generates retrieval query from top contributing features"
+      },
+      {
+        "id": "edge_rag_to_agent2",
+        "source": "rag_retrieval",
+        "sourceHandle": "passages",
+        "target": "agent2_quality",
+        "targetHandle": "rag_passages",
+        "description": "Retrieved knowledge passages augment quality analysis RCA"
+      },
+      {
+        "id": "edge_agent2_to_agent3",
+        "source": "agent2_quality",
+        "sourceHandle": "quality_output",
+        "target": "agent3_prediction",
+        "targetHandle": "quality_output",
+        "description": "Quality analysis report (contributing factors, anomaly summary, RAG evidence) to Defect Prediction Agent"
+      },
+      {
+        "id": "edge_agent3_to_agent4",
+        "source": "agent3_prediction",
+        "sourceHandle": "defect_output",
+        "target": "agent4_optimization",
+        "targetHandle": "defect_output",
+        "description": "Defect prediction (class, probability, SHAP, risk level) to Process Optimization Agent"
+      },
+      {
+        "id": "edge_rag_to_agent4",
+        "source": "rag_retrieval",
+        "sourceHandle": "passages",
+        "target": "agent4_optimization",
+        "targetHandle": "rag_passages",
+        "description": "Retrieved knowledge supports recommendation generation"
+      },
+      {
+        "id": "edge_agent4_to_granite",
+        "source": "agent4_optimization",
+        "sourceHandle": "structured_context",
+        "target": "granite_llm",
+        "targetHandle": "context",
+        "description": "Structured context (anomalies + prediction + recommendations) to Granite for narration only"
+      },
+      {
+        "id": "edge_agent4_to_output",
+        "source": "agent4_optimization",
+        "sourceHandle": "optimization_output",
+        "target": "output_node",
+        "targetHandle": "optimization_output",
+        "description": "Full optimization output including recommendations (AWAITING_REVIEW) to pipeline aggregator"
+      }
+    ],
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.85
+    }
+  },
+  "environment": {
+    "required_env_vars": [
+      "WATSONX_API_KEY",
+      "WATSONX_API_URL",
+      "WATSONX_PROJECT_ID",
+      "GRANITE_MODEL_ID",
+      "DATABASE_URL",
+      "USE_CACHED_GRANITE_RESPONSES"
+    ],
+    "required_python_packages": [
+      "fastapi",
+      "uvicorn",
+      "sqlalchemy",
+      "xgboost",
+      "scikit-learn",
+      "shap",
+      "chromadb",
+      "ibm-watsonx-ai"
+    ],
+    "backend_url": "http://localhost:8000",
+    "vector_store": "rag/vectorstore/chroma_db",
+    "model_path": "ml/models/defect_predictor_v1.0.pkl"
+  },
+  "gate_a_status": {
+    "status": "PENDING",
+    "note": "IBM watsonx.ai access not yet provisioned. Workflow runs in cache mode (USE_CACHED_GRANITE_RESPONSES=true). Once IBM API key and project ID are configured in .env, set USE_CACHED_GRANITE_RESPONSES=false to enable live Granite calls.",
+    "fallback": "data/synthetic/demo_granite_responses.json",
+    "decision_log_ref": "DECISION_LOG.md: DECISION-001"
+  },
+  "agent_communication_protocol": {
+    "format": "JSON",
+    "note": "All inter-agent communication uses structured JSON — never free text. Schema validated by Pydantic at API boundary. See agents/orchestrator/pipeline.py for full schema.",
+    "schemas": {
+      "ProcessMonitoringOutput": "agents/monitoring/process_monitoring_agent.py",
+      "QualityAnalysisOutput": "agents/quality_analysis/quality_analysis_agent.py",
+      "DefectPredictionOutput": "agents/defect_prediction/defect_prediction_agent.py",
+      "RecommendationOutput": "agents/optimization/process_optimization_agent.py"
+    }
+  },
+  "human_in_the_loop": {
+    "enabled": true,
+    "endpoint": "POST /api/recommendations/{id}/review",
+    "actions": ["APPROVED", "REJECTED"],
+    "note": "No recommendation results in automated machine actuation. Human engineer must review and approve/reject via the dashboard or API before any process action."
+  }
+}

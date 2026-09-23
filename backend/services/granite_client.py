@@ -18,7 +18,7 @@ What Granite must NOT do:
 - Invent parameter thresholds
 
 All Granite calls include the structured ML/analysis context in the prompt.
-The LLM is grounded — it cannot fabricate technical information when
+The LLM is grounded -- it cannot fabricate technical information when
 the system prompt explicitly prohibits it.
 """
 
@@ -31,14 +31,14 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# IBM watsonx.ai configuration — loaded from environment variables
+# IBM watsonx.ai configuration -- loaded from environment variables
 # NEVER hard-code credentials here
 def get_watsonx_config():
     return {
         "url": os.getenv("WATSONX_API_URL", ""),
         "api_key": os.getenv("WATSONX_API_KEY", ""),
         "project_id": os.getenv("WATSONX_PROJECT_ID", ""),
-        "model_id": os.getenv("GRANITE_MODEL_ID", "ibm/granite-13b-instruct-v2"),
+        "model_id": os.getenv("GRANITE_MODEL_ID", "ibm/granite-guardian-8b"),
         "use_cached": os.getenv("USE_CACHED_GRANITE_RESPONSES", "false").lower() == "true",
     }
 
@@ -52,7 +52,7 @@ Your role is to narrate and synthesize these results in clear engineering langua
 
 STRICT RULES:
 1. Do NOT invent numerical values. Use only the numbers provided in the context.
-2. Do NOT claim causation — use language like "associated with", "likely contributing", "may indicate".
+2. Do NOT claim causation -- use language like "associated with", "likely contributing", "may indicate".
 3. Do NOT fabricate industrial standards or technical thresholds not present in the context.
 4. Do NOT claim the system has been validated in a real industrial environment.
 5. Always end recommendations with: "Human engineer review required before any process action."
@@ -146,7 +146,7 @@ def _load_cached_response(task: str) -> str:
             cache = json.load(f)
         response = cache.get(task, f"[Cached response not available for task: {task}]")
         logger.info(f"Using cached Granite response for task: {task}")
-        return f"[CACHED DEMO RESPONSE — IBM API unavailable]\n\n{response}"
+        return f"[CACHED DEMO RESPONSE -- IBM API unavailable]\n\n{response}"
     except FileNotFoundError:
         return f"[IBM API unavailable. Cached response not found for task: {task}]"
 
@@ -164,13 +164,17 @@ def generate_narrative(task: str, context: dict, instruction: str | None = None)
         str: Granite-generated narrative, grounded in context
     """
     cfg = get_watsonx_config()
+
+    # If USE_CACHED_GRANITE_RESPONSES=true, skip live API entirely (demo / CI mode)
+    if cfg["use_cached"]:
+        logger.info(f"[Cache mode] Returning cached Granite response for task: {task}")
+        return _load_cached_response(task)
+
     if not cfg["api_key"] or not cfg["url"]:
         logger.warning(
             "IBM watsonx.ai credentials not configured. "
             "Set WATSONX_API_KEY, WATSONX_API_URL, WATSONX_PROJECT_ID in .env"
         )
-        if cfg["use_cached"]:
-            return _load_cached_response(task)
         return (
             "[IBM watsonx.ai not configured. "
             "Set credentials in .env to enable Granite-powered narration.]"
@@ -184,6 +188,4 @@ def generate_narrative(task: str, context: dict, instruction: str | None = None)
         return response
     except Exception as e:
         logger.error(f"Granite API call failed: {e}")
-        if cfg["use_cached"]:
-            return _load_cached_response(task)
-        return f"[Granite API error: {e}]"
+        return f"[Granite API error: {e}. To use cached responses: set USE_CACHED_GRANITE_RESPONSES=true in .env]"

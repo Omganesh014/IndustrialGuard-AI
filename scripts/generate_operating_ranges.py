@@ -4,7 +4,7 @@ scripts/generate_operating_ranges.py
 Generate validated operating ranges for Process Optimization Agent.
 
 Called after preprocessing. Computes normal-class percentile ranges from training data.
-These ranges are DATA-DERIVED — never fabricated from "industry standards."
+These ranges are DATA-DERIVED -- never fabricated from "industry standards."
 
 Output: ml/evaluation/operating_ranges.json
 """
@@ -46,7 +46,7 @@ def generate_ranges():
         logger.info(f"Computing ranges from {len(normal_df)} normal-class training records")
     else:
         normal_df = df[feature_cols]
-        logger.info(f"No target column — computing ranges from all {len(normal_df)} training records")
+        logger.info(f"No target column -- computing ranges from all {len(normal_df)} training records")
 
     ranges = {}
     for col in feature_cols:

@@ -54,7 +54,7 @@ def client():
     try:
         os.remove("test_industrialguard.db")
     except (FileNotFoundError, PermissionError):
-        pass  # file lock on Windows — non-fatal, file will be overwritten next run
+        pass  # file lock on Windows -- non-fatal, file will be overwritten next run
 
 
 # ── Health ─────────────────────────────────────────────────────────────────────

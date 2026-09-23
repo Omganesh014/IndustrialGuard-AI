@@ -9,7 +9,7 @@ Responsibilities:
 - Handle duplicates
 - Identify and handle outliers (IQR method, documented)
 - Encode categorical features
-- Scale numerical features (fit on TRAIN ONLY — no leakage)
+- Scale numerical features (fit on TRAIN ONLY -- no leakage)
 - Engineer features
 - Produce train/validation/test splits
 - Save processed datasets and scaler artifacts
@@ -47,12 +47,19 @@ ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ── Configuration ──────────────────────────────────────────────────────────────
-# Fill these after Gate B — dataset-specific
+# Dataset: CNC Machining Quality (2000 records, 5 process parameters, binary defect label)
+# Source: data/raw/dataset.csv
 DATASET_FILENAME = os.getenv("DATASET_FILENAME", "dataset.csv")
-TARGET_COLUMN = os.getenv("TARGET_COLUMN", "target")  # defect label or None
-ID_COLUMNS: list[str] = []       # columns to drop (IDs, timestamps used only for ordering)
-CATEGORICAL_COLUMNS: list[str] = []  # fill after dataset inspection
-NUMERICAL_COLUMNS: list[str] = []    # fill after dataset inspection
+TARGET_COLUMN = os.getenv("TARGET_COLUMN", "target")
+ID_COLUMNS: list[str] = []
+CATEGORICAL_COLUMNS: list[str] = []  # no categorical features in this dataset
+NUMERICAL_COLUMNS: list[str] = [
+    "air_temperature",
+    "process_temperature",
+    "rotational_speed",
+    "torque",
+    "tool_wear",
+]
 
 TRAIN_RATIO = 0.70
 VAL_RATIO = 0.15
@@ -138,7 +145,7 @@ def handle_outliers_iqr(df: pd.DataFrame, columns: list[str], factor: float = 3.
         upper = Q3 + factor * IQR
         n_capped = ((df[col] < lower) | (df[col] > upper)).sum()
         if n_capped > 0:
-            logger.info(f"Outlier capping — {col}: {n_capped} values capped to [{lower:.3f}, {upper:.3f}]")
+            logger.info(f"Outlier capping -- {col}: {n_capped} values capped to [{lower:.3f}, {upper:.3f}]")
         df[col] = df[col].clip(lower=lower, upper=upper)
     return df
 
@@ -184,7 +191,7 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     Feature engineering.
     Fill this after dataset inspection.
-    Examples (dataset-specific — do not apply blindly):
+    Examples (dataset-specific -- do not apply blindly):
     - Rolling means if timestamps present
     - Ratio features if domain knowledge supports them
     - Interaction terms if correlation analysis shows relevance
@@ -194,7 +201,7 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     # Example (do not uncomment without validation):
     # if "temperature" in df.columns and "pressure" in df.columns:
     #     df["temp_pressure_ratio"] = df["temperature"] / (df["pressure"] + 1e-6)
-    logger.info("Feature engineering: placeholder — implement after dataset inspection")
+    logger.info("Feature engineering: placeholder -- implement after dataset inspection")
     return df
 
 
@@ -217,7 +224,7 @@ def split_data(df: pd.DataFrame, target_col: str):
         stratify=y_temp if stratify is not None else None
     )
 
-    logger.info(f"Split sizes — Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
+    logger.info(f"Split sizes -- Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
     return X_train, X_val, X_test, y_train, y_val, y_test
 
 
