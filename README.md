@@ -19,27 +19,29 @@
 ## ⚠️ Important Disclaimer
 
 > [!IMPORTANT]
-> **IndustrialGuard AI is a decision-support prototype** engineered for industrial quality monitoring and preventive analysis.
+> **IndustrialGuard AI is an industrial decision-support prototype** engineered for CNC quality monitoring and preventive defect prediction.
 > - **Not an Autonomous Controller:** It does **not** directly actuate physical machine controls or bypass certified PLC/SCADA safety interlocks.
 > - **Human-in-the-Loop:** All prescriptive corrective actions require human engineer verification and authorization before shop-floor execution.
-> - **Strict Grounding:** The generative LLM layer (IBM Granite) performs natural-language synthesis and evidence narration only; numerical predictions and thresholds are strictly derived from deterministic machine learning models and empirical operating envelopes.
+> - **Strict Evidentiary Grounding:** The generative LLM layer (IBM Granite Guardian 8B) performs natural-language synthesis and evidence narration only; numerical predictions and statistical thresholds are strictly derived from deterministic machine learning models and empirical operating envelopes.
 
 ---
 
 ## 📑 Table of Contents
 
 - [System Overview](#system-overview)
-- [Core Architecture](#core-architecture)
+- [System Architecture](#system-architecture)
 - [The 4-Agent Pipeline](#the-4-agent-pipeline)
+- [Modern Operator Interface (Next.js 14 Dashboard)](#modern-operator-interface-nextjs-14-dashboard)
 - [Machine Learning & Anomaly Detection](#machine-learning--anomaly-detection)
 - [Explainability & Root-Cause Analysis (XAI)](#explainability--root-cause-analysis-xai)
 - [Retrieval-Augmented Generation (RAG)](#retrieval-augmented-generation-rag)
-- [Demo Incident Walkthrough](#demo-incident-walkthrough)
+- [Single-Entry Runner (`app.py`)](#single-entry-runner-apppy)
 - [REST API Reference](#rest-api-reference)
 - [Project Structure](#project-structure)
 - [Installation & Quickstart](#installation--quickstart)
 - [Running the Test Suite](#running-the-test-suite)
 - [Decision Log Summary](#decision-log-summary)
+- [Project Resources & Deliverables](#project-resources--deliverables)
 - [License & Attributions](#license--attributions)
 
 ---
@@ -48,42 +50,44 @@
 
 Manufacturing operations generate continuous multi-sensor telemetry (thermal, vibrational, torque, rotational). IndustrialGuard AI bridges deterministic industrial engineering analytics with generative AI reasoning.
 
-Rather than relying on ungrounded conversational models, IndustrialGuard AI executes an evidentiary pipeline:
+Rather than relying on ungrounded conversational models, IndustrialGuard AI executes an evidential pipeline:
 
 ```
-TELEMETRY DATA
+TELEMETRY DATA (Air Temp, Process Temp, Speed, Torque, Wear)
       │
       ▼
-[Stage 1: Process Monitoring] ──────> Physical Range & Completeness Validation
+[Stage 1: Process Monitoring Agent] ────> Physical Range & Completeness Validation
       │
       ▼
-[Stage 2: Quality Analysis]   ──────> Dual Anomaly Detection (IQR + Isolation Forest)
+[Stage 2: Quality Analysis Agent]   ────> Dual Anomaly Detection (IQR + Isolation Forest) & SHAP RCA
       │
       ▼
-[Stage 3: Defect Prediction]  ──────> Supervised ML Classification & SHAP Attribution
+[Stage 3: Defect Prediction Agent]  ────> Supervised XGBoost Classifier (Probability & Risk)
       │
       ▼
-[Stage 4: Process Optimization] ────> Rule-Based & What-If Prescriptive Analysis
+[Stage 4: Optimization Agent]       ────> Prescriptive What-If Guidance & RAG Manual Citations
       │
       ▼
-[Human Engineer Review]       ──────> Authorization & Audit Logging in Database
+[Human Engineer Review Gate]        ────> Mandatory Sign-off (Approve / Reject) in Database Audit Log
 ```
 
 ---
 
-## Core Architecture
+## System Architecture
+
+![IndustrialGuard AI Architecture](Resources/Architecture.png)
 
 ```mermaid
 flowchart TD
     subgraph UI ["Operator Interface (Frontend)"]
-        A[Next.js 14 Dashboard]
-        B[Recharts Telemetry Stream]
+        A[Next.js 14 Dashboard - Dark Industrial Theme]
+        B[Telemetry Studio & Preset Simulator]
         C[Human-in-the-Loop Review Panel]
         D[Granite Grounded Assistant]
     end
 
     subgraph API ["Gateway & Services (FastAPI)"]
-        E[FastAPI Application Gateway]
+        E[FastAPI Application Gateway :8000]
         F[SQLAlchemy ORM / SQLite DB]
         G[Fallback Response Cache]
     end
@@ -97,9 +101,9 @@ flowchart TD
 
     subgraph Engines ["Analytical & Generative Engines"]
         L[(ChromaDB Vector Store)]
-        M[XGBoost & Scikit-Learn Models]
+        M[XGBoost Classifier v1.0]
         N[SHAP TreeExplainer]
-        O[IBM watsonx.ai Granite LLM]
+        O[IBM watsonx.ai Granite Guardian 8B]
     end
 
     A <-->|REST API / JSON| E
@@ -113,7 +117,7 @@ flowchart TD
     J <--> N
     K <--> L
     K <--> O
-    O -.->|Fallback if Offline| G
+    O -.->|Cached Mode if Offline| G
 ```
 
 ---
@@ -131,11 +135,55 @@ IndustrialGuard AI strictly implements the four specialized agents designated in
 
 ---
 
+## Modern Operator Interface (Next.js 14 Dashboard)
+
+The frontend is built with **Next.js 14, TypeScript, Tailwind CSS, Recharts, and Lucide React** in a dark industrial cyber aesthetic (`#0a0d14` background, subtle glassmorphism, glowing telemetry cards, and status radar pulses):
+
+1. **Top Navigation Bar (`Navbar.tsx`):**
+   - Real-time backend connectivity ping (`ONLINE (8000)` with live radar pulse).
+   - Dynamic alert counter pills for pending human sign-offs and detected anomalies.
+   - Smooth instant switching across all 7 operational tabs.
+
+2. **Telemetry Studio & Simulation (`TelemetryStudio.tsx`):**
+   - **Interactive Parameter Sliders:** Real-time adjustments for Air Temperature, Process Temperature, Rotational Speed, Torque, and Tool Wear with visual empirical bounds warnings.
+   - **Quick-Load Failure Mode Presets:**
+     - 🟢 *Normal CNC Operation* (300.1K, 310.0K, 1525 RPM, 39.2 Nm, 110 min)
+     - 🟠 *High Tool Wear & Elevated Torque* (304.8K, 315.2K, 1180 RPM, 68.5 Nm, 235 min)
+     - 🔴 *Critical Heat Dissipation / Power Strain* (307.5K, 317.0K, 1100 RPM, 75.0 Nm, 255 min)
+     - 🟡 *Rapid Overstrain Risk* (301.8K, 311.5K, 1350 RPM, 63.0 Nm, 215 min)
+   - **Full Evidential Pipeline Results:** Displays Stage 1 Anomaly report, Stage 2 SHAP feature attribution bars, Stage 3 Defect Probability bar, and Stage 4 Prescriptive guidance.
+
+3. **4-Agent Pipeline Stage Flow (`PipelineStageFlow.tsx`):**
+   - Visual architectural cards tracking the exact role and execution status of each of the 4 autonomous agents.
+
+4. **Human-in-the-Loop Review Queue (`RecommendationsTab.tsx`):**
+   - Search and filter by `PENDING`, `APPROVED`, `REJECTED`.
+   - Interactive **Approve** and **Reject** buttons with modal requesting Engineer ID and optional corrective action, updating the database audit log via `POST /api/recommendations/{id}/review`.
+
+5. **Defect Predictions Log (`PredictionsTab.tsx`):**
+   - Searchable and filterable history of model classifications with probability progress bars and risk badges.
+
+6. **Dual Anomaly Monitor (`AnomaliesTab.tsx`):**
+   - Complete log of statistical violations with deviation in IQR units and Isolation Forest multi-variate scores.
+
+7. **Model Governance & Limits (`ModelGovernanceTab.tsx`):**
+   - Evaluation metrics: **PR-AUC (0.8300)**, **ROC-AUC (0.9780)**, **F1 (0.8120)**, **Accuracy (98.2%)**.
+   - Safe empirical operating ranges table derived from the 10,000 production records.
+
+8. **IBM Granite Grounded Assistant (`ChatAssistantTab.tsx`):**
+   - Grounded conversational AI interface with avatar chat bubbles.
+   - One-click prompt suggestions and RAG knowledge base provenance citations.
+
+9. **Standalone Dashboard (`index.html`):**
+   - Lightweight standalone HTML/CSS/JS dashboard that runs directly in any browser without Node.js dependencies.
+
+---
+
 ## Machine Learning & Anomaly Detection
 
 ### Experiment 1: Model Selection Benchmark (AI4I 2020 Manufacturing Dataset)
 
-Models were evaluated on an isolated validation set using **Precision-Recall AUC (PR-AUC)** as the primary selection criterion to protect against class imbalance:
+Models were evaluated on an isolated validation set using **Precision-Recall AUC (PR-AUC)** as the primary selection criterion to protect against extreme class imbalance (3.39% defect rate):
 
 | Candidate Model | Train F1 | Train PR-AUC | Val F1 | Val PR-AUC | Val ROC-AUC | Status |
 |---|---|---|---|---|---|---|
@@ -147,9 +195,10 @@ Models were evaluated on an isolated validation set using **Precision-Recall AUC
 - **Test Precision-Recall AUC:** `0.9198`
 - **Test ROC-AUC:** `0.9755`
 - **Test F1 Score:** `0.8217`
+- **Test Overall Accuracy:** `98.2%`
 
 ### Anomaly Detection Architecture
-- **Isolation Forest:** Multi-variate tree isolation identifying global non-linear parameter anomalies across the 5-dimensional feature space.
+- **Isolation Forest:** Multi-variate tree isolation identifying non-linear parameter anomalies across the 5-dimensional feature space.
 - **Statistical IQR Limits:** Empirical bounds computed on normal-class baseline data ($Q_1 - 2.5 \times \text{IQR}$, $Q_3 + 2.5 \times \text{IQR}$) providing immediate physical interpretability in true engineering units.
 
 ---
@@ -176,29 +225,23 @@ Technical knowledge is structured in a 3-tier provenance hierarchy stored in Chr
 
 ---
 
-## Demo Incident Walkthrough
+## Single-Entry Runner (`app.py`)
 
-Run the standard end-to-end incident scenario ("Batch 2024-001 Incident"):
+The project features a unified CLI entrypoint:
 
 ```bash
-python -c "from agents.orchestrator.pipeline import run_demo_scenario; import json; print(json.dumps(run_demo_scenario(), indent=2))"
+python app.py              # Starts FastAPI backend on http://127.0.0.1:8000
+python app.py --demo       # Runs the 3-scenario CLI demo walkthrough
+python app.py --pipeline   # Executes the full ML pipeline end-to-end
+python app.py --rag        # Ingests documents and rebuilds ChromaDB vector store
+python app.py --test       # Runs the 41-case pytest integration suite
 ```
-
-**Scenario Details:**
-- **Input Parameters:** `air_temperature: 301.2 K`, `process_temperature: 311.8 K`, `rotational_speed: 1395.0 rpm`, `torque: 64.5 Nm`, `tool_wear: 218.0 min`.
-- **Stage 1 (Monitoring):** Physical range validation passes.
-- **Stage 2 (Quality Analysis):** Severe statistical violation detected (`tool_wear` exceeds normal limit > 200 min; `torque` exceeds upper limit). Anomaly severity: `HIGH`.
-- **Stage 3 (Defect Prediction):** XGBoost outputs `DEFECTIVE` with **99.3% probability**. Risk level escalated to `HIGH`.
-- **Stage 4 (Optimization):**
-  - What-if inference calculates that decreasing `tool_wear` reduces defect probability from **99.3% to 51.3%** ($\Delta = 0.4804$).
-  - Rule-based analysis recommends adjusting `torque` toward the normal operating range ([25.97, 52.89] Nm).
-  - IBM Granite produces a grounded narrative with explicit human-in-the-loop review warnings.
 
 ---
 
 ## REST API Reference
 
-The FastAPI backend exposes typed endpoints:
+The FastAPI backend exposes typed REST endpoints:
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -214,22 +257,28 @@ The FastAPI backend exposes typed endpoints:
 | `GET` | `/api/model-performance` | Registered model version metadata and validation metrics |
 | `POST` | `/api/chat` | Grounded AI assistant interface (IBM Granite + RAG) |
 
+Interactive Swagger documentation is available at `http://localhost:8000/docs`.
+
 ---
 
 ## Project Structure
 
 ```
 IndustrialGuard-AI/
-├── .env.example             # Configuration template
-├── .gitignore               # Ignored artifacts (DB, caches, large models)
+├── .env.example             # Configuration template with CORS & IBM watsonx settings
+├── .gitignore               # Clean git exclusions (DB, venv, caches, node_modules)
+├── app.py                   # Single-entry CLI runner & server launcher
+├── index.html               # Standalone lightweight operator dashboard
+├── style.css                # Standalone styling for index.html
 ├── pyproject.toml           # Python packaging and dependency specifications
-├── README.md                # Architectural documentation
+├── requirements.txt         # Production Python dependencies
+├── README.md                # Architectural documentation & quickstart
 ├── DATASET.md               # AI4I 2020 dataset card and feature specifications
 ├── DECISION_LOG.md          # Architectural and experimental decision log
 ├── DEMO_CONTRACT.md         # End-to-end demo execution contract
 │
 ├── backend/                 # FastAPI application
-│   ├── main.py              # Application entry point and API routes
+│   ├── main.py              # Application gateway, CORS, and API routes
 │   ├── db/
 │   │   └── models.py        # SQLAlchemy ORM models (SQLite/PostgreSQL)
 │   └── services/
@@ -255,22 +304,45 @@ IndustrialGuard-AI/
 │   ├── retrieval/           # Context retriever with source attribution
 │   └── knowledge_base/      # Tier 1, 2, and 3 technical domain documents
 │
-├── frontend/                # Next.js 14 Dashboard
+├── frontend/                # Next.js 14 Operator Dashboard
 │   ├── src/
-│   │   ├── components/      # UI components (MetricCard, RiskBadge)
-│   │   ├── pages/           # Dashboard overview and chat interface
-│   │   ├── styles/          # Tailwind CSS styles
-│   │   └── lib/             # Typed API client
-│   ├── package.json         # Node.js dependencies
-│   ├── tailwind.config.js   # Tailwind configuration
+│   │   ├── components/      # Modular UI components:
+│   │   │   ├── Navbar.tsx             # Header with live radar indicator
+│   │   │   ├── OverviewTab.tsx        # KPI cards & probability trend chart
+│   │   │   ├── TelemetryStudio.tsx    # Interactive parameter sliders & presets
+│   │   │   ├── PipelineStageFlow.tsx  # 4-stage pipeline visualizer
+│   │   │   ├── PredictionsTab.tsx     # Defect classifications log
+│   │   │   ├── AnomaliesTab.tsx       # Dual anomaly monitor
+│   │   │   ├── RecommendationsTab.tsx # Human-in-the-loop review queue
+│   │   │   ├── ModelGovernanceTab.tsx # Evaluation metrics & envelopes
+│   │   │   ├── ChatAssistantTab.tsx   # Grounded Granite assistant
+│   │   │   ├── MetricCard.tsx         # Sleek glassmorphism metric cards
+│   │   │   └── RiskBadge.tsx          # Status badges with glowing dots
+│   │   ├── pages/
+│   │   │   ├── index.tsx              # Main dashboard view
+│   │   │   └── _app.tsx               # App entry
+│   │   ├── styles/
+│   │   │   └── globals.css            # Dark industrial theme & radar animations
+│   │   └── lib/
+│   │       └── api.ts                 # Fully typed REST API client
+│   ├── package.json         # Node.js dependencies (Next.js 14, Recharts, Lucide)
+│   ├── tailwind.config.js   # Tailwind CSS configuration
 │   └── tsconfig.json        # TypeScript configuration
+│
+├── langflow/                # Agentic visual workflow export
+│   └── industrialguard_workflow.json
+│
+├── Resources/               # Presentations & architectural diagrams
+│   ├── Architecture.png
+│   ├── IndustrialGuard_AI_Presentation.pptx
+│   └── Completion Certificate _ SkillsBuild.pdf
 │
 ├── scripts/                 # Utility automation scripts
 │   ├── create_dataset.py    # AI4I dataset generator
 │   ├── generate_operating_ranges.py # Operating range calculator
 │   └── setup_project.py     # Environment initialization verification
 │
-└── tests/                   # Test suite (Unit, Integration, E2E)
+└── tests/                   # 41-case Test Suite (Unit, Integration, E2E)
     ├── integration/         # API endpoint integration tests
     ├── ml/                  # Model inference and explainability tests
     ├── rag/                 # Vector retrieval and chunking tests
@@ -283,80 +355,68 @@ IndustrialGuard-AI/
 
 ### Prerequisites
 - **Python:** 3.11 or higher
-- **Node.js:** v18.0 or higher (for the frontend dashboard)
+- **Node.js:** v18.0 or higher
 - **Git**
 
 ### 1. Clone & Set Up Environment
+
 ```bash
 git clone https://github.com/Omganesh014/IndustrialGuard-AI.git
 cd IndustrialGuard-AI
 
-# Create and activate a Python virtual environment (optional but recommended)
+# Create virtual environment
 python -m venv .venv
+
+# Activate virtual environment
 # Windows:
 .venv\Scripts\activate
 # Linux/macOS:
 source .venv/bin/activate
 
 # Install Python dependencies
-pip install -e .
+pip install -r requirements.txt
 ```
 
 ### 2. Configure Environment
+
 Copy `.env.example` to `.env`:
+
 ```bash
 cp .env.example .env
 ```
-*(Optional)* Add your IBM watsonx.ai credentials in `.env` if you have an active IBM Cloud account:
+
+*(Optional)* Configure IBM watsonx.ai credentials in `.env` if you have an active IBM Cloud account:
+
 ```env
 WATSONX_API_URL=https://us-south.ml.cloud.ibm.com
 WATSONX_API_KEY=your_ibm_api_key_here
 WATSONX_PROJECT_ID=your_project_id_here
-GRANITE_MODEL_ID=ibm/granite-13b-instruct-v2
+GRANITE_MODEL_ID=ibm/granite-guardian-8b
 USE_CACHED_GRANITE_RESPONSES=true
 ```
 
-### 3. Initialize ML Artifacts & Knowledge Base
-Run the deterministic pipeline setup:
+### 3. Start the Backend API
+
 ```bash
-# 1. Generate dataset
-python scripts/create_dataset.py
-
-# 2. Run preprocessing & stratified splits
-python ml/preprocessing/pipeline.py
-
-# 3. Train models and select winner (XGBoost)
-python ml/models/train.py
-
-# 4. Train anomaly detector
-python ml/anomaly/detector.py
-
-# 5. Compute SHAP explainability
-python ml/explainability/shap_analysis.py
-
-# 6. Calculate empirical operating ranges
-python scripts/generate_operating_ranges.py
-
-# 7. Ingest RAG documents & build ChromaDB vector store
-python rag/ingestion/ingest.py
-python rag/vectorstore/setup.py
+python app.py
 ```
+- API Base: `http://localhost:8000`
+- Swagger Docs: `http://localhost:8000/docs`
+- Health Check: `http://localhost:8000/health`
 
-### 4. Start the Backend API
-```bash
-uvicorn backend.main:app --reload --port 8000
-```
-API Documentation will be available at:  
-- Swagger UI: `http://localhost:8000/docs`  
-- ReDoc: `http://localhost:8000/redoc`
+### 4. Start the Operator Dashboard
 
-### 5. Start the Frontend Dashboard
+In a new terminal:
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Open `http://localhost:3000` in your browser.
+
+Open **`http://localhost:3000`** in your browser.
+
+*(Alternative)* You can also simply double-click or open **`index.html`** in your browser for the lightweight standalone dashboard!
 
 ---
 
@@ -365,10 +425,11 @@ Open `http://localhost:3000` in your browser.
 The test suite covers API endpoints, multi-agent workflows, model inference, anomaly detection, data preprocessing, and vector retrieval:
 
 ```bash
+python app.py --test
+# or
 pytest -v
 ```
 
-**Test Summary:**
 ```
 tests/integration/test_api.py ............                               [ 29%]
 tests/ml/test_models.py ....                                             [ 39%]
@@ -377,7 +438,7 @@ tests/unit/test_agents.py ......                                         [ 65%]
 tests/unit/test_anomaly_detector.py .......                              [ 82%]
 tests/unit/test_preprocessing.py .......                                 [100%]
 
-======================= 41 passed, 2 warnings in 18.48s =======================
+======================= 41 passed, 2 warnings in 13.77s =======================
 ```
 
 ---
@@ -395,6 +456,15 @@ For full technical justifications and gate records, refer to [`DECISION_LOG.md`]
 - **DECISION-008:** Dual anomaly detection combining Isolation Forest and unscaled IQR bounds.
 - **DECISION-009:** SHAP TreeExplainer for feature importance and local record attribution.
 - **DECISION-010:** Tri-partite evidential basis for optimization recommendations.
+
+---
+
+## Project Resources & Deliverables
+
+- 📊 **Presentation Deck:** [`Resources/IndustrialGuard_AI_Presentation.pptx`](Resources/IndustrialGuard_AI_Presentation.pptx)
+- 🖼️ **System Architecture Diagram:** [`Resources/Architecture.png`](Resources/Architecture.png)
+- ⚙️ **Langflow Agentic Workflow Export:** [`langflow/industrialguard_workflow.json`](langflow/industrialguard_workflow.json)
+- 📜 **IBM SkillsBuild Certification:** [`Resources/Completion Certificate _ SkillsBuild.pdf`](Resources/Completion%20Certificate%20_%20SkillsBuild.pdf)
 
 ---
 
